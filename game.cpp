@@ -406,7 +406,7 @@ void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,
     }
 }
 
-void Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end)
+std::vector<Tank&> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end)
 {
     const int NUM_TANKS = end - begin;
     sorted_tanks.reserve(NUM_TANKS);
@@ -414,21 +414,85 @@ void Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, std
 
     if ((end - begin) < 2)
     {
-        
+        auto returnvector = new vector<Tank*>;
+        returnvector 
+        return returnvector;
     }
     if ((end - begin) == 2)
     {
-        if (original[begin].health > original[end].health) 
+        vector<Tank&> returnvector;
+        if (original[begin].health > original[end].health)
         {
-            sorted_tanks[begin] = &original[end];
-            sorted_tanks[end] = &original[begin];
+            returnvector.emplace_back(&original[end]);
+            returnvector.emplace_back(&original[begin]);
         }
+        else
+        {
+            returnvector.emplace_back(&original[begin]);
+            returnvector.emplace_back(&original[end]);
+        }
+        return returnvector;
+    }
 
         int mid = (begin + end) / 2;
-        merge_sort_tanks_health(original, sorted_tanks, begin, mid);
-        merge_sort_tanks_health(original, sorted_tanks, mid, end);
-        
+        std::vector<Tank&> left = merge_sort_tanks_health(original, sorted_tanks, begin, mid);
+        std::vector<Tank&> right = merge_sort_tanks_health(original, sorted_tanks, mid, end);
+
+        return merge(left, right);
+}
+
+
+vector<Tank*> merge(vector<Tank&> left, vector<Tank&> right) {
+  
+    vector<Tank*> tanks;
+    
+    while (left.size() > 0 && right.size() > 0)
+    {
+        if (left[left.size()].health > right[right.size()].health)
+        {
+
+            tanks.emplace_back(left[left.size()]);
+            right.erase(right.begin());
+        }
+        else
+        {
+            tanks.emplace(right[0]);
+            right.erase(right.begin());
+        }
+
     }
+    while (left.size() > 0 && right.size() < 1)
+    {
+        if (left.size > 1)
+        {
+
+        }
+        else
+        {
+            tanks.emplace_back()
+        }
+    }
+    while (left.size() < 1 && right.size() > 0)
+    {
+
+    }
+
+
+    //for (size_t i = 0; i < left.size(); i++)
+    //{
+    //    auto index = 0;
+    //    while (left[i].health >= right[index].health) {
+    //        index++;
+    //    }
+    //    if (left[i].health <= right[i].health) {
+    //        tanks.push_back(&left[i]);
+    //    }
+    //    else {
+    //        tanks.push_back(&right[i]);
+    //    }
+
+    //}
+
 }
 
 
