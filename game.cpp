@@ -375,7 +375,7 @@ void Game::draw()
 }
 
 // -----------------------------------------------------------
-// Sort tanks by health value using insertion sort
+// Sort tanks by health value using insertion sort O(N^2), will be changed for mergesort O(N log(N))
 // -----------------------------------------------------------
 void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end)
 {
