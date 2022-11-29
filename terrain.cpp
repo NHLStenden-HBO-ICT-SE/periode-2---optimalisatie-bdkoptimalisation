@@ -75,15 +75,15 @@ namespace Tmpl8
         //Instantiate tiles for path planning
         for (size_t y = 0; y < tiles.size(); y++)
         {
-            for (size_t x = 0; x < tiles.at(y).size(); x++)
+            for (size_t x = 0; x < tiles[y].size(); x++)
             {
-                tiles.at(y).at(x).position_x = x;
-                tiles.at(y).at(x).position_y = y;
+                tiles[y][x].position_x = x;
+                tiles[y][x].position_y = y;
 
-                if (is_accessible(y, x + 1)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y).at(x + 1)); }
-                if (is_accessible(y, x - 1)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y).at(x - 1)); }
-                if (is_accessible(y + 1, x)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y + 1).at(x)); }
-                if (is_accessible(y - 1, x)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y - 1).at(x)); }
+                if (is_accessible(y, x + 1)) { tiles[y][x].exits.push_back(&tiles[y][x + 1]); }
+                if (is_accessible(y, x - 1)) { tiles[y][x].exits.push_back(&tiles[y][x - 1]); }
+                if (is_accessible(y + 1, x)) { tiles[y][x].exits.push_back(&tiles[y + 1][x]); }
+                if (is_accessible(y - 1, x)) { tiles[y][x].exits.push_back(&tiles[y - 1][x]); }
             }
         }
     }
@@ -100,8 +100,8 @@ namespace Tmpl8
         {
             for (size_t x = 0; x < tiles.at(y).size(); x++)
             {
-                int posX = (x * sprite_size) + HEALTHBAR_OFFSET;
-                int posY = y * sprite_size;
+                const int posX = (x * sprite_size) + HEALTHBAR_OFFSET;
+                const int posY = y * sprite_size;
 
                 switch (tiles.at(y).at(x).tile_type)
                 {
@@ -151,7 +151,7 @@ namespace Tmpl8
         {
             current_route = queue.front();
             queue.pop();
-            TerrainTile* current_tile = current_route.back();
+            const TerrainTile* current_tile = current_route.back();
 
             //Check all exits, if target then done, else if unvisited push a new partial route
             for (TerrainTile * exit : current_tile->exits)
@@ -162,7 +162,7 @@ namespace Tmpl8
                     route_found = true;
                     break;
                 }
-                else if (!exit->visited)
+                if (!exit->visited)
                 {
                     exit->visited = true;
                     visited.push_back(exit);
@@ -182,18 +182,15 @@ namespace Tmpl8
         {
             //Convert route to vec2 to prevent dangling pointers
             std::vector<vec2> route;
-            for (TerrainTile* tile : current_route)
+            route.reserve(current_route.size());
+            for (const TerrainTile* tile : current_route)
             {
-                route.push_back(vec2((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size));
+                route.emplace_back((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size);
             }
 
             return route;
         }
-        else
-        {
-            return  std::vector<vec2>();
-        }
-
+        return {};
     }
 
     //TODO: Function not used, convert BFS to dijkstra and take speed into account next year :)
@@ -225,18 +222,9 @@ namespace Tmpl8
         }
     }
 
-    bool Terrain::is_accessible(int y, int x)
+    bool Terrain::is_accessible(const int y, const int x) const
     {
         //Bounds check
-        if ((x >= 0 && x < terrain_width) && (y >= 0 && y < terrain_height))
-        {
-            //Inaccessible terrain check
-            if (tiles.at(y).at(x).tile_type != TileType::MOUNTAINS && tiles.at(y).at(x).tile_type != TileType::WATER)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return (x >= 0 && x < terrain_width && (y >= 0 && y < terrain_height)) && tiles[y][x].tile_type != MOUNTAINS && tiles[y][x].tile_type != WATER;
     }
 }

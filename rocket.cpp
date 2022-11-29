@@ -4,14 +4,13 @@
 
 namespace Tmpl8
 {
-Rocket::Rocket(vec2 position, vec2 direction, float collision_radius, allignments allignment, Sprite* rocket_sprite)
+Rocket::Rocket(vec2 position, vec2 direction, const uint8_t collision_radius, allignments allignment, Sprite* rocket_sprite)
     : position(position), speed(direction), collision_radius(collision_radius), allignment(allignment), current_frame(0), rocket_sprite(rocket_sprite), active(true)
 {
 }
 
 Rocket::~Rocket()
-{
-}
+= default;
 
 void Rocket::tick()
 {
@@ -27,19 +26,14 @@ void Rocket::draw(Surface* screen)
 }
 
 //Does the given circle collide with this rockets collision circle?
-bool Rocket::intersects(vec2 position_other, float radius_other) const
+bool Rocket::intersects(const vec2 position_other, const uint8_t radius_other) const
 {
     //Note: Uses squared lengths to remove expensive square roots
-    float distance_sqr = (position_other - position).sqr_length();
 
-    if (distance_sqr <= ((collision_radius + radius_other) * (collision_radius + radius_other)))
-    {
+    if (const float distance_sqr = (position_other - position).dot(); distance_sqr <= (collision_radius + radius_other) * (collision_radius + radius_other))
         return true;
-    }
-    else
-    {
-        return false;
-    }
+    
+    return false;
 }
 
 } // namespace Tmpl8

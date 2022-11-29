@@ -43,7 +43,7 @@ namespace Tmpl8
 
     private:
 
-        bool is_accessible(int y, int x);
+        bool is_accessible(int y, int x) const;
 
         static constexpr int sprite_size = 16;
         static constexpr size_t terrain_width = 80;

@@ -94,12 +94,12 @@ class vec2 // adapted from https://github.com/dcow/RayTracer
     vec2() = default;
     vec2(float v) : x(v), y(v) {}
     vec2(float x, float y) : x(x), y(y) {}
-    vec2 operator-() const { return vec2(-x, -y); }
-    vec2 operator+(const vec2& addOperand) const { return vec2(x + addOperand.x, y + addOperand.y); }
-    vec2 operator-(const vec2& operand) const { return vec2(x - operand.x, y - operand.y); }
-    vec2 operator*(const vec2& operand) const { return vec2(x * operand.x, y * operand.y); }
-    vec2 operator*(float operand) const { return vec2(x * operand, y * operand); }
-    vec2 operator/(float operand) const { return vec2(x / operand, y / operand); }
+    vec2 operator-() const { return {-x, -y}; }
+    vec2 operator+(const vec2& addOperand) const { return {x + addOperand.x, y + addOperand.y}; }
+    vec2 operator-(const vec2& operand) const { return {x - operand.x, y - operand.y}; }
+    vec2 operator*(const vec2& operand) const { return {x * operand.x, y * operand.y}; }
+    vec2 operator*(float operand) const { return {x * operand, y * operand}; }
+    vec2 operator/(float operand) const { return {x / operand, y / operand}; }
     bool operator==(const vec2& operand) const { return (x == operand.x && y == operand.y); }
     bool operator!=(const vec2& operand) const { return !(*this == operand); }
     void operator-=(const vec2& a)
@@ -129,20 +129,20 @@ class vec2 // adapted from https://github.com/dcow/RayTracer
     }
 
     float& operator[](const int idx) { return cell[idx]; }
-    float length() { return sqrtf(x * x + y * y); }
-    float sqr_length() { return x * x + y * y; }
-    vec2 normalized()
+    float length() const { return sqrtf(x * x + y * y); }
+    float dot() const { return x * x + y * y; }
+    vec2 normalized() const
     {
-        float r = 1.0f / length();
-        return vec2(x * r, y * r);
+        const float r = 1.0f / length();
+        return {x * r, y * r};
     }
     void normalize()
     {
-        float r = 1.0f / length();
+        const float r = 1.0f / length();
         x *= r;
         y *= r;
     }
-    static vec2 normalize(vec2 v) { return v.normalized(); }
+    static vec2 normalize(const vec2 v) { return v.normalized(); }
     float dot(const vec2& operand) const { return x * operand.x + y * operand.y; }
 };
 
@@ -151,12 +151,12 @@ class Rectangle2D
 
   public:
     Rectangle2D() = default;
-    Rectangle2D(vec2 min, vec2 max) : min(min), max(max){};
+    Rectangle2D(vec2 min, vec2 max) : min(min), max(max){}
 
     bool intersects_circle(const vec2& pos, const float radius) const
     {
-        float deltaX = pos.x - clamp(pos.x, min.x, max.x);
-        float deltaY = pos.y - clamp(pos.y, min.y, max.y);
+        const float deltaX = pos.x - clamp(pos.x, min.x, max.x);
+        const float deltaY = pos.y - clamp(pos.y, min.y, max.y);
 
         return ((deltaX * deltaX) + (deltaY * deltaY)) <= (radius * radius);
     }
@@ -217,7 +217,7 @@ class vec3
     float operator[](const uint& idx) const { return cell[idx]; }
     float& operator[](const uint& idx) { return cell[idx]; }
     float length() const { return sqrtf(x * x + y * y + z * z); }
-    float sqr_length() const { return x * x + y * y + z * z; }
+    float dot() const { return x * x + y * y + z * z; }
     vec3 normalized() const
     {
         float r = 1.0f / length();

@@ -4,11 +4,9 @@
 namespace Tmpl8
 {
 
-Particle_beam::Particle_beam() : min_position(), max_position(), particle_beam_sprite(nullptr), sprite_frame(0), rectangle(), damage(1)
-{
-}
 
-Particle_beam::Particle_beam(vec2 min, vec2 max, Sprite* particle_beam_sprite, int damage) : particle_beam_sprite(particle_beam_sprite), sprite_frame(0), damage(damage)
+Particle_beam::Particle_beam(vec2 min, vec2 max, Sprite* particle_beam_sprite, int damage) : sprite_frame(0),
+    damage(damage), particle_beam_sprite(particle_beam_sprite)
 {
     min_position = min;
     max_position = min + max;
@@ -25,12 +23,12 @@ void Particle_beam::tick(vector<Tank>& tanks)
     }
 }
 
-void Particle_beam::draw(Surface* screen)
+void Particle_beam::draw(Surface* screen) const
 {
-    vec2 position = rectangle.min;
+    const vec2 position = rectangle.min;
 
-    const int offset_x = 23;
-    const int offset_y = 137;
+    constexpr int offset_x = 23;
+    constexpr int offset_y = 137;
 
     particle_beam_sprite->set_frame(sprite_frame / 10);
     particle_beam_sprite->draw(screen, (int)(position.x - offset_x + HEALTHBAR_OFFSET), (int)(position.y - offset_y));

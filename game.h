@@ -13,12 +13,12 @@ class Game
   public:
     void set_target(Surface* surface) { screen = surface; }
     void init();
-    void shutdown();
-    void update(float deltaTime);
+    static void shutdown();
+    void update();
     void draw();
-    void tick(float deltaTime);
-    void insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end);
-    void draw_health_bars(const std::vector<const Tank*>& sorted_tanks, const int team);
+    void tick();
+    static void insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end);
+    void draw_health_bars(const std::vector<const Tank*>& sorted_tanks, const int team) const;
     void measure_performance();
 
     Tank& find_closest_enemy(Tank& current_tank);
@@ -61,7 +61,15 @@ class Game
     bool lock_update = false;
 
     //Checks if a point lies on the left of an arbitrary angled line
-    bool left_of_line(vec2 line_start, vec2 line_end, vec2 point);
+    static bool left_of_line(vec2 line_start, vec2 line_end, vec2 point);
+    void collision();
+    void update_tanks();
+    void find_first_active_tank(uint16_t& first_active) const;
+    void calculate_convex_hull();
+    void update_rocket();
+    void rocket_hits_convex();
+    void update_particle_beams();
+    void collision_tanks(vector<Tank>* tankies, uint8_t depth);
 };
 
 }; // namespace Tmpl8
