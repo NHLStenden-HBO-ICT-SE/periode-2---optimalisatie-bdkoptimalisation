@@ -406,29 +406,28 @@ void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,
     }
 }
 
-std::vector<Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, int begin, int end)
+std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, int begin, int end)
 {
     const int NUM_TANKS = end - begin;
 
     if (NUM_TANKS < 2)
     {
-        vector<Tank*> returnvector;
+        vector<const Tank*> returnvector;
         returnvector.emplace_back(original[begin]);
         return returnvector;
     }
 
-
         int mid = (begin + end) / 2;
-        std::vector<Tank*> left = merge_sort_tanks_health(original, begin, mid);
-        std::vector<Tank*> right = merge_sort_tanks_health(original, mid, end);
+        std::vector<const Tank*> left = merge_sort_tanks_health(original, begin, mid);
+        std::vector<const Tank*> right = merge_sort_tanks_health(original, mid, end);
 
         return merge(left, right);
 }
 
 
-std::vector<Tank*> merge(vector<Tank*> left, vector<Tank*> right) {
+std::vector<const Tank*> merge(std::vector<const Tank*> left, std::vector<const Tank*> right) {
   
-    vector<Tank*> tanks;
+    std::vector<const Tank*> tanks;
     
     while (left.size() > 0 && right.size() > 0)
     {
