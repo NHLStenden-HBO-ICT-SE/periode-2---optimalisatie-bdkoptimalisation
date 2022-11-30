@@ -367,7 +367,7 @@ void Game::draw()
 
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
         std::vector<const Tank*> sorted_tanks;
-        merge_sort_tanks_health(tanks, sorted_tanks, begin, begin + NUM_TANKS);
+        merge_sort_tanks_health(tanks, begin, begin + NUM_TANKS);
         sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(), [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
         draw_health_bars(sorted_tanks, t);
@@ -406,92 +406,57 @@ void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,
     }
 }
 
-std::vector<Tank&> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end)
+std::vector<Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, int begin, int end)
 {
     const int NUM_TANKS = end - begin;
-    sorted_tanks.reserve(NUM_TANKS);
-    sorted_tanks.emplace_back(&original.at(begin));
 
-    if ((end - begin) < 2)
+    if (NUM_TANKS < 2)
     {
-        auto returnvector = new vector<Tank*>;
-        returnvector 
+        vector<Tank*> returnvector;
+        returnvector.emplace_back(original[begin]);
         return returnvector;
     }
-    if ((end - begin) == 2)
-    {
-        vector<Tank&> returnvector;
-        if (original[begin].health > original[end].health)
-        {
-            returnvector.emplace_back(&original[end]);
-            returnvector.emplace_back(&original[begin]);
-        }
-        else
-        {
-            returnvector.emplace_back(&original[begin]);
-            returnvector.emplace_back(&original[end]);
-        }
-        return returnvector;
-    }
+
 
         int mid = (begin + end) / 2;
-        std::vector<Tank&> left = merge_sort_tanks_health(original, sorted_tanks, begin, mid);
-        std::vector<Tank&> right = merge_sort_tanks_health(original, sorted_tanks, mid, end);
+        std::vector<Tank*> left = merge_sort_tanks_health(original, begin, mid);
+        std::vector<Tank*> right = merge_sort_tanks_health(original, mid, end);
 
         return merge(left, right);
 }
 
 
-vector<Tank*> merge(vector<Tank&> left, vector<Tank&> right) {
+std::vector<Tank*> merge(vector<Tank*> left, vector<Tank*> right) {
   
     vector<Tank*> tanks;
     
     while (left.size() > 0 && right.size() > 0)
     {
-        if (left[left.size()].health > right[right.size()].health)
+        if (left[0]->health < right[0]->health)
         {
 
-            tanks.emplace_back(left[left.size()]);
-            right.erase(right.begin());
+            tanks.emplace_back(left[0]);
+            left.erase(left.begin());
         }
         else
         {
-            tanks.emplace(right[0]);
+            tanks.emplace_back(right[0]);
             right.erase(right.begin());
         }
 
     }
     while (left.size() > 0 && right.size() < 1)
     {
-        if (left.size > 1)
-        {
-
-        }
-        else
-        {
-            tanks.emplace_back()
-        }
+       tanks.emplace_back(left[0]);
+       left.erase(left.begin());
     }
     while (left.size() < 1 && right.size() > 0)
     {
-
+        tanks.emplace_back(right[0]);
+        right.erase(right.begin());
     }
 
-
-    //for (size_t i = 0; i < left.size(); i++)
-    //{
-    //    auto index = 0;
-    //    while (left[i].health >= right[index].health) {
-    //        index++;
-    //    }
-    //    if (left[i].health <= right[i].health) {
-    //        tanks.push_back(&left[i]);
-    //    }
-    //    else {
-    //        tanks.push_back(&right[i]);
-    //    }
-
-    //}
+    return tanks;
 
 }
 
