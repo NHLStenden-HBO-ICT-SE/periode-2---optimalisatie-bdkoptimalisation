@@ -411,8 +411,8 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
 
     if (NUM_TANKS < 2)
     {
-        vector<const Tank*> returnvector;
-        returnvector.emplace_back(original[begin]);
+        std::vector<const Tank*> returnvector;
+        returnvector.emplace_back(&original.at(0));
         return returnvector;
     }
 
@@ -424,34 +424,39 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
 }
 
 
-std::vector<const Tank*> merge(std::vector<const Tank*> left, std::vector<const Tank*> right) {
-  
+std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::vector<const Tank*> right)
+{
     std::vector<const Tank*> tanks;
-    
+
     while (left.size() > 0 && right.size() > 0)
     {
-        if (left[0]->health < right[0]->health)
+        if (left[0]->health > right[0]->health)
         {
 
             tanks.emplace_back(left[0]);
             left.erase(left.begin());
+            left.shrink_to_fit();
         }
         else
         {
             tanks.emplace_back(right[0]);
             right.erase(right.begin());
+            right.shrink_to_fit();
         }
 
     }
     while (left.size() > 0 && right.size() < 1)
     {
-       tanks.emplace_back(left[0]);
-       left.erase(left.begin());
+        tanks.emplace_back(left[0]);
+        left.erase(left.begin());
+        left.shrink_to_fit();
     }
     while (left.size() < 1 && right.size() > 0)
     {
         tanks.emplace_back(right[0]);
         right.erase(right.begin());
+        right.shrink_to_fit();
+
     }
 
     return tanks;
