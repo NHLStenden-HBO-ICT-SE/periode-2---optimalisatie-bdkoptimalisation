@@ -376,9 +376,10 @@ void Game::draw()
 // -----------------------------------------------------------
 // Sort tanks by health value using insertion sort O(N^2), will be changed for mergesort O(N log(N))
 // -----------------------------------------------------------
-void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end)
+std::vector<const Tank*> Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,  int begin, int end)
 {
     const int NUM_TANKS = end - begin;
+    std::vector<const Tank*> sorted_tanks ;
     sorted_tanks.reserve(NUM_TANKS);
     sorted_tanks.emplace_back(&original.at(begin));
 
@@ -403,6 +404,7 @@ void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,
             }
         }
     }
+    return sorted_tanks;
 }
 
 std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, int begin, int end)
@@ -412,7 +414,7 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
     if (NUM_TANKS < 2)
     {
         std::vector<const Tank*> returnvector;
-        returnvector.emplace_back(&original.at(0));
+        returnvector.emplace_back(&original.at(begin));
         return returnvector;
     }
 
@@ -430,7 +432,7 @@ std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::
 
     while (left.size() > 0 && right.size() > 0)
     {
-        if (left[0]->health > right[0]->health)
+        if (left[0]->compare_health(*right[0]) <= 0)
         {
 
             tanks.emplace_back(left[0]);
