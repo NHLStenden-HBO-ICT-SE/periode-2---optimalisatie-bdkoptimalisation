@@ -367,7 +367,7 @@ void Game::draw()
 
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
         std::vector<const Tank*> sorted_tanks = merge_sort_tanks_health(tanks, begin, begin + NUM_TANKS);
-        sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(), [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
+       // sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(), [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
         draw_health_bars(sorted_tanks, t);
     }
@@ -429,12 +429,16 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
 std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::vector<const Tank*> right)
 {
     std::vector<const Tank*> tanks;
+    tanks.reserve(left.size() + right.size());
 
     while (left.size() > 0 && right.size() > 0)
     {
-        if (left[0]->compare_health(*right[0]) <= 0)
+        if (left[0]->active == false)
+            left.erase(left.begin());
+        else if (right[0]->active == false)
+            right.erase(right.begin());
+        else if (left[0]->compare_health(*right[0]) <= 0)
         {
-
             tanks.emplace_back(left[0]);
             left.erase(left.begin());
             left.shrink_to_fit();
@@ -449,14 +453,22 @@ std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::
     }
     while (left.size() > 0 && right.size() < 1)
     {
-        tanks.emplace_back(left[0]);
-        left.erase(left.begin());
+        if (left[0]->active == false)
+            left.erase(left.begin());
+        else {
+            tanks.emplace_back(left[0]);
+            left.erase(left.begin());
+        }
         left.shrink_to_fit();
     }
     while (left.size() < 1 && right.size() > 0)
     {
-        tanks.emplace_back(right[0]);
-        right.erase(right.begin());
+        if (right[0]->active == false)
+            right.erase(right.begin());
+        else {
+            tanks.emplace_back(right[0]);
+            right.erase(right.begin());
+        }
         right.shrink_to_fit();
 
     }
