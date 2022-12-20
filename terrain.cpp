@@ -283,7 +283,11 @@ namespace Tmpl8
     }
     //for calculating the distance between 2 tiles
     float Terrain::getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination ) {
-       float distance = fabs(sqrt(pow((destination->position_x - currentTile->position_x), 2) + pow((destination->position_y - currentTile->position_y), 2)));
+       float distance = sqrt(pow((destination->position_x - currentTile->position_x), 2) + pow((destination->position_y - currentTile->position_y), 2));
+       if (distance < 0)
+       {
+           distance = -1 * distance;
+       }
        return distance;
     }
     
