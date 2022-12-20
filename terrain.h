@@ -17,6 +17,8 @@ namespace Tmpl8
         //TerrainTile *up, *down, *left, *right;
         vector<TerrainTile*> exits;
         bool visited = false;
+        //for path finding algoritm
+        int distance;
 
         size_t position_x;
         size_t position_y;
@@ -37,6 +39,11 @@ namespace Tmpl8
 
         //Use Breadth-first search to find shortest route to the destination
         vector<vec2> get_route(const Tank& tank, const vec2& target);
+
+        vector<vec2> get_route_quicker(const Tank& tank, const vec2& target);
+
+        double getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination);
+
 
         float get_speed_modifier(const vec2& position) const;
 

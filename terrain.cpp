@@ -1,9 +1,23 @@
 #include "precomp.h"
 #include "terrain.h"
+#include <iostream>
+#include <queue>
 
 namespace fs = std::filesystem;
 namespace Tmpl8
 {
+    //creating struct for comparison in prioritized queue
+    struct compareDist {
+        //using function to find out which tile is closer and setting the struct
+        bool operator()(const vector<TerrainTile*>& first, const vector<TerrainTile*>& second) const {
+            // return true if the first object has less distance then the second object. this will result in min heap priority list
+            int firstTotal = 0,
+                secondTotal = 0;
+            return first[first.size()-1]->distance < second[second.size()-1]->distance;
+        }
+    };
+
+
     Terrain::Terrain()
     {
         //Load in terrain sprites
@@ -19,7 +33,6 @@ namespace Tmpl8
         tile_rocks = std::make_unique<Sprite>(rocks_img.get(), 1);
         tile_water = std::make_unique<Sprite>(water_img.get(), 1);
         tile_mountains = std::make_unique<Sprite>(mountains_img.get(), 1);
-
 
         //Load terrain layout file and fill grid based on tiletypes
         fs::path terrain_file_path{ "assets/terrain.txt" };
@@ -154,7 +167,7 @@ namespace Tmpl8
             TerrainTile* current_tile = current_route.back();
 
             //Check all exits, if target then done, else if unvisited push a new partial route
-            for (TerrainTile * exit : current_tile->exits)
+            for (TerrainTile* exit : current_tile->exits)
             {
                 if (exit->position_x == target_x && exit->position_y == target_y)
                 {
@@ -167,15 +180,16 @@ namespace Tmpl8
                     exit->visited = true;
                     visited.push_back(exit);
                     queue.push(current_route);
-                    queue.back().push_back(exit);
+                   ;
                 }
             }
         }
 
         //Reset tiles
-        for (TerrainTile * tile : visited)
+        for (TerrainTile* tile : visited)
         {
             tile->visited = false;
+            tile->distance = 0;
         }
 
         if (route_found)
@@ -195,6 +209,89 @@ namespace Tmpl8
         }
 
     }
+
+
+    //Use A* search to find shortest route to the destination
+    vector<vec2> Terrain::get_route_quicker(const Tank& tank, const vec2& target)
+    {
+        //Find start and target tile
+        const size_t pos_x = tank.position.x / sprite_size;
+        const size_t pos_y = tank.position.y / sprite_size;
+
+        const size_t target_x = target.x / sprite_size;
+        const size_t target_y = target.y / sprite_size;
+
+        //Init queue
+        priority_queue<vector<TerrainTile*>, vector<vector<TerrainTile*>>, compareDist> queue;
+        //setting distance of starter tile
+        tiles.at(pos_y).at(pos_x).distance = getDistanceToTarget(&tiles.at(pos_y).at(pos_x), &tiles.at(target_y).at(target_x));
+        queue.empty();
+        //adding start tile
+        queue.push({&tiles.at(pos_y).at(pos_x)});
+
+        std::vector<TerrainTile*> visited;
+
+        bool route_found = false;
+        vector<TerrainTile*> current_route;
+        while (!queue.empty() && !route_found)
+        {
+            current_route = queue.top();
+            queue.pop();
+            TerrainTile* current_tile = current_route.back();
+            current_tile->distance = getDistanceToTarget(current_tile, &tiles.at(target_y).at(target_x));
+           
+            //Check all exits, if target then done, else if unvisited push a new partial route
+            for (TerrainTile* exit : current_tile->exits)
+            {
+
+                if (exit->position_x == target_x && exit->position_y == target_y)
+                {
+                    current_route.push_back(exit);
+                    route_found = true;
+                    break;
+                }
+                else if (!exit->visited)
+                {
+                    exit->visited = true;
+                    exit->distance = getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
+                    
+                    visited.push_back(exit);
+                    current_route.push_back(exit);
+                    queue.push(current_route);
+                    current_route.pop_back();
+                }
+            }
+        }
+
+        //Reset tiles
+        for (TerrainTile* tile : visited)
+        {
+            tile->visited = false;
+            tile->distance = 0;
+        }
+
+        if (route_found)
+        {
+            //Convert route to vec2 to prevent dangling pointers
+            std::vector<vec2> route;
+            for (TerrainTile* tile : current_route)
+            {
+                route.push_back(vec2((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size));
+            }
+
+            return route;
+        }
+        else
+        {
+            return  std::vector<vec2>();
+        }
+
+    }
+    //for calculating the distance between 2 tiles
+    double Terrain::getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination ) {
+        return sqrt((currentTile->position_x - destination->position_x) ^ 2 + (currentTile->position_y - destination->position_y) ^ 2);      
+    }
+    
 
     //TODO: Function not used, convert BFS to dijkstra and take speed into account next year :)
     float Terrain::get_speed_modifier(const vec2& position) const

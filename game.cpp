@@ -52,7 +52,7 @@ void Game::init()
 
     tanks.reserve(num_tanks_blue + num_tanks_red);
 
-    uint max_rows = 24;
+    int max_rows = 24;
 
     float start_blue_x = tank_size.x + 40.0f;
     float start_blue_y = tank_size.y + 30.0f;
@@ -83,6 +83,7 @@ void Game::init()
 // -----------------------------------------------------------
 // Close down application
 // -----------------------------------------------------------
+
 void Game::shutdown()
 {
 }
@@ -126,13 +127,13 @@ bool Tmpl8::Game::left_of_line(vec2 line_start, vec2 line_end, vec2 point)
 // -----------------------------------------------------------
 void Game::update(float deltaTime)
 {
-    //Calculate the route to the destination for each tank using BFS
+    //Calculate the route to the destination for each tank using BFS when get_route is applied. get_route_quicker is A*
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
     {
         for (Tank& t : tanks)
         {
-            t.set_route(background_terrain.get_route(t, t.target));
+            t.set_route(background_terrain.get_route_quicker(t, t.target));
         }
     }
 
@@ -219,7 +220,7 @@ void Game::update(float deltaTime)
             forcefield_hull.push_back(point_on_hull);
             vec2 endpoint = tanks.at(first_active).position;
 
-            for (Tank& tank : tanks)
+            for (Tank& tank : tanks )
             {
                 if (tank.active)
                 {
@@ -374,7 +375,7 @@ void Game::draw()
 }
 
 // -----------------------------------------------------------
-// Sort tanks by health value using insertion sort O(N^2), will be changed for mergesort O(N log(N))
+// Sort tanks by health value using insertion sort O(N^2), has been changed for mergesort O(N log(N))
 // -----------------------------------------------------------
 std::vector<const Tank*> Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,  int begin, int end)
 {
