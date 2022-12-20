@@ -18,7 +18,7 @@ namespace Tmpl8
         vector<TerrainTile*> exits;
         bool visited = false;
         //for path finding algoritm
-        int distance;
+        float distance;
 
         size_t position_x;
         size_t position_y;
@@ -42,7 +42,7 @@ namespace Tmpl8
 
         vector<vec2> get_route_quicker(const Tank& tank, const vec2& target);
 
-        double getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination);
+        float getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination);
 
 
         float get_speed_modifier(const vec2& position) const;

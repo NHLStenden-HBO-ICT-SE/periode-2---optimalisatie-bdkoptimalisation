@@ -6,14 +6,13 @@
 namespace fs = std::filesystem;
 namespace Tmpl8
 {
+    // Define the pair type
+    typedef std::pair<float, std::vector<TerrainTile*>> FloatVectorPair;
     //creating struct for comparison in prioritized queue
-    struct compareDist {
-        //using function to find out which tile is closer and setting the struct
-        bool operator()(const vector<TerrainTile*>& first, const vector<TerrainTile*>& second) const {
-            // return true if the first object has less distance then the second object. this will result in min heap priority list
-            int firstTotal = 0,
-                secondTotal = 0;
-            return first[first.size()-1]->distance < second[second.size()-1]->distance;
+    struct CompareDist {
+        bool operator()(const FloatVectorPair& left, const FloatVectorPair& right) const {
+           return left.first > right.first;
+           
         }
     };
 
@@ -180,7 +179,7 @@ namespace Tmpl8
                     exit->visited = true;
                     visited.push_back(exit);
                     queue.push(current_route);
-                   ;
+                     queue.back().push_back(exit);
                 }
             }
         }
@@ -222,23 +221,21 @@ namespace Tmpl8
         const size_t target_y = target.y / sprite_size;
 
         //Init queue
-        priority_queue<vector<TerrainTile*>, vector<vector<TerrainTile*>>, compareDist> queue;
+        priority_queue<FloatVectorPair, vector<FloatVectorPair>, CompareDist> queue;
         //setting distance of starter tile
-        tiles.at(pos_y).at(pos_x).distance = getDistanceToTarget(&tiles.at(pos_y).at(pos_x), &tiles.at(target_y).at(target_x));
-        queue.empty();
         //adding start tile
-        queue.push({&tiles.at(pos_y).at(pos_x)});
-
+        queue.push({(getDistanceToTarget(&tiles.at(pos_y).at(pos_x), &tiles.at(target_y).at( target_x))), {&tiles.at(pos_y).at(pos_x)}});
         std::vector<TerrainTile*> visited;
 
         bool route_found = false;
+        float current_cost = 0;
         vector<TerrainTile*> current_route;
         while (!queue.empty() && !route_found)
         {
-            current_route = queue.top();
+            current_cost = queue.top().first;
+            current_route = queue.top().second;
             queue.pop();
             TerrainTile* current_tile = current_route.back();
-            current_tile->distance = getDistanceToTarget(current_tile, &tiles.at(target_y).at(target_x));
            
             //Check all exits, if target then done, else if unvisited push a new partial route
             for (TerrainTile* exit : current_tile->exits)
@@ -253,11 +250,10 @@ namespace Tmpl8
                 else if (!exit->visited)
                 {
                     exit->visited = true;
-                    exit->distance = getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
-                    
                     visited.push_back(exit);
+                    float cost = (current_route.size()*16) + getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
                     current_route.push_back(exit);
-                    queue.push(current_route);
+                    queue.push({cost, current_route });
                     current_route.pop_back();
                 }
             }
@@ -288,8 +284,9 @@ namespace Tmpl8
 
     }
     //for calculating the distance between 2 tiles
-    double Terrain::getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination ) {
-        return sqrt((currentTile->position_x - destination->position_x) ^ 2 + (currentTile->position_y - destination->position_y) ^ 2);      
+    float Terrain::getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination ) {
+       float distance = fabsf(sqrt(((destination->position_x - currentTile->position_x) ^ 2) + ((destination->position_y - currentTile->position_y) ^ 2)));
+       return distance;
     }
     
 
