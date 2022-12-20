@@ -179,7 +179,7 @@ namespace Tmpl8
                     exit->visited = true;
                     visited.push_back(exit);
                     queue.push(current_route);
-                     queue.back().push_back(exit);
+                    queue.back().push_back(exit);
                 }
             }
         }
@@ -188,7 +188,6 @@ namespace Tmpl8
         for (TerrainTile* tile : visited)
         {
             tile->visited = false;
-            tile->distance = 0;
         }
 
         if (route_found)
@@ -224,7 +223,7 @@ namespace Tmpl8
         priority_queue<FloatVectorPair, vector<FloatVectorPair>, CompareDist> queue;
         //setting distance of starter tile
         //adding start tile
-        queue.push({(getDistanceToTarget(&tiles.at(pos_y).at(pos_x), &tiles.at(target_y).at( target_x))), {&tiles.at(pos_y).at(pos_x)}});
+        queue.push({0, {&tiles.at(pos_y).at(pos_x)}});
         std::vector<TerrainTile*> visited;
 
         bool route_found = false;
@@ -251,7 +250,7 @@ namespace Tmpl8
                 {
                     exit->visited = true;
                     visited.push_back(exit);
-                    float cost = (current_route.size()*16) + getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
+                    float cost =  getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
                     current_route.push_back(exit);
                     queue.push({cost, current_route });
                     current_route.pop_back();
@@ -263,7 +262,6 @@ namespace Tmpl8
         for (TerrainTile* tile : visited)
         {
             tile->visited = false;
-            tile->distance = 0;
         }
 
         if (route_found)
@@ -285,7 +283,7 @@ namespace Tmpl8
     }
     //for calculating the distance between 2 tiles
     float Terrain::getDistanceToTarget(TerrainTile* currentTile, TerrainTile* destination ) {
-       float distance = fabsf(sqrt(((destination->position_x - currentTile->position_x) ^ 2) + ((destination->position_y - currentTile->position_y) ^ 2)));
+       float distance = fabs(sqrt(pow((destination->position_x - currentTile->position_x), 2) + pow((destination->position_y - currentTile->position_y), 2)));
        return distance;
     }
     

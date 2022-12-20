@@ -17,8 +17,6 @@ namespace Tmpl8
         //TerrainTile *up, *down, *left, *right;
         vector<TerrainTile*> exits;
         bool visited = false;
-        //for path finding algoritm
-        float distance;
 
         size_t position_x;
         size_t position_y;
