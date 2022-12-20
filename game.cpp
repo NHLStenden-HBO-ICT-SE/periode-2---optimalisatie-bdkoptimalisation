@@ -133,7 +133,7 @@ void Game::update(float deltaTime)
     {
         for (Tank& t : tanks)
         {
-            t.set_route(background_terrain.get_route_quicker(t, t.target));
+            t.set_route(background_terrain.get_route(t, t.target));
         }
     }
 
