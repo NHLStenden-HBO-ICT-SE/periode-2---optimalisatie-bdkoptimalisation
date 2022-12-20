@@ -6,19 +6,22 @@
 namespace fs = std::filesystem;
 namespace Tmpl8
 {
-    // Define the pair type
+    
+    // Define the pair type for readability
     typedef std::pair<float, std::vector<TerrainTile*>> FloatVectorPair;
-    //creating struct for comparison in prioritized queue
+    //creating struct for comparison in prioritized queue. this is where the heuristic is defined. min heap sorting
     struct CompareDist {
         bool operator()(const FloatVectorPair& left, const FloatVectorPair& right) const {
-           return left.first > right.first;
-           
+            return left.first > right.first;
+
         }
     };
 
-
     Terrain::Terrain()
     {
+
+      
+
         //Load in terrain sprites
         grass_img = std::make_unique<Surface>("assets/tile_grass.png");
         forest_img = std::make_unique<Surface>("assets/tile_forest.png");
@@ -219,7 +222,7 @@ namespace Tmpl8
         const size_t target_x = target.x / sprite_size;
         const size_t target_y = target.y / sprite_size;
 
-        //Init queue
+        //Init queue, using a priority que to implement A* heuristics. the heuristic is defined in CompareDist struct on the top of the file
         priority_queue<FloatVectorPair, vector<FloatVectorPair>, CompareDist> queue;
         //setting distance of starter tile
         //adding start tile
@@ -281,14 +284,10 @@ namespace Tmpl8
         }
 
     }
+
     //for calculating the distance between 2 tiles
-    float Terrain::getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination ) {
-       double distance = fabs((((float)destination->position_x) - ((float)currentTile->position_x)) + (((float)destination->position_y) - ((float)currentTile->position_y)));
-       if (distance < 0)
-       {
-           distance = -1 * distance;
-       }
-       return distance;
+     float Terrain::getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination ) const {
+       return fabs((((float)destination->position_x) - ((float)currentTile->position_x)) + (((float)destination->position_y) - ((float)currentTile->position_y)));
     }
     
 

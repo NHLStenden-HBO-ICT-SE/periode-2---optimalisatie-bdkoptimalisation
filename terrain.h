@@ -40,7 +40,7 @@ namespace Tmpl8
 
         vector<vec2> get_route_quicker(const Tank& tank, const vec2& target);
 
-        float getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination);
+        float getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination) const;
 
 
         float get_speed_modifier(const vec2& position) const;
