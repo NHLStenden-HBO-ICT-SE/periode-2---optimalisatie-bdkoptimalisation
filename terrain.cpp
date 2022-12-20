@@ -253,7 +253,7 @@ namespace Tmpl8
                 {
                     exit->visited = true;
                     visited.push_back(exit);
-                    float cost =  getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
+                    float cost = getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
                     current_route.push_back(exit);
                     queue.push({cost, current_route });
                     current_route.pop_back();
@@ -273,7 +273,7 @@ namespace Tmpl8
             std::vector<vec2> route;
             for (TerrainTile* tile : current_route)
             {
-                route.push_back(vec2((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size));
+                route.push_back(vec2(tile->position_x * sprite_size, tile->position_y * sprite_size));
             }
 
             return route;

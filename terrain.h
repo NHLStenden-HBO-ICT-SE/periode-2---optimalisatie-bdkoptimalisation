@@ -18,8 +18,8 @@ namespace Tmpl8
         vector<TerrainTile*> exits;
         bool visited = false;
 
-        size_t position_x;
-        size_t position_y;
+        float position_x;
+        float position_y;
 
         TileType tile_type;
 
