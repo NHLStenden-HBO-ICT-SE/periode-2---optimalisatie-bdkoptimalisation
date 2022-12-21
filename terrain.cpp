@@ -287,7 +287,7 @@ namespace Tmpl8
 
     //for calculating the distance between 2 tiles
      float Terrain::getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination ) const {
-       return fabs((((float)destination->position_x) - ((float)currentTile->position_x)) + (((float)destination->position_y) - ((float)currentTile->position_y)));
+       return fabs(((destination->position_x) - (currentTile->position_x)) + ((destination->position_y) - ((currentTile->position_y))));
     }
     
 
