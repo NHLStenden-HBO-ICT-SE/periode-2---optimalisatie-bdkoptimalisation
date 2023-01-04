@@ -9,7 +9,7 @@ void Smoke::tick()
     if (++current_frame == 60) current_frame = 0;
 }
 
-void Smoke::draw(Surface* screen)
+void Smoke::draw(Surface* screen) const
 {
     smoke_sprite.set_frame(current_frame / 15);
 

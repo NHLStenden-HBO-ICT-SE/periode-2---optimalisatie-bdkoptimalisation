@@ -5,10 +5,10 @@ namespace Tmpl8
 class Smoke
 {
   public:
-    Smoke(Sprite& smoke_sprite, vec2 position) : current_frame(0), smoke_sprite(smoke_sprite), position(position) {}
+    Smoke(Sprite& smoke_sprite, const vec2 position) : position(position), current_frame(0), smoke_sprite(smoke_sprite) {}
 
     void tick();
-    void draw(Surface* screen);
+    void draw(Surface* screen) const;
 
     vec2 position;
 

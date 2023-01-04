@@ -12,14 +12,12 @@ Tank::Tank(
     Sprite* smoke_sprite,
     float tar_x,
     float tar_y,
-    float collision_radius,
     int health,
     float max_speed)
     : position(pos_x, pos_y),
       allignment(allignment),
       target(tar_x, tar_y),
       health(health),
-      collision_radius(collision_radius),
       max_speed(max_speed),
       force(0, 0),
       reload_time(1),
@@ -33,8 +31,7 @@ Tank::Tank(
 }
 
 Tank::~Tank()
-{
-}
+= default;
 
 void Tank::tick(Terrain& terrain)
 {
@@ -60,7 +57,7 @@ void Tank::tick(Terrain& terrain)
     if (++current_frame > 8) current_frame = 0;
 
     //Target reached?
-    if (current_route.size() > 0)
+    if (!current_route.empty())
     {
         if (std::abs(position.x - target.x) < 8.f && std::abs(position.y - target.y) < 8.f)
         {
@@ -97,7 +94,7 @@ void Tank::deactivate()
 }
 
 //Remove health
-bool Tank::hit(int hit_value)
+bool Tank::hit(const int hit_value)
 {
     health -= hit_value;
 
@@ -111,9 +108,9 @@ bool Tank::hit(int hit_value)
 }
 
 //Draw the sprite with the facing based on this tanks movement direction
-void Tank::draw(Surface* screen)
+void Tank::draw(Surface* screen) const
 {
-    vec2 direction = (target - position).normalized();
+    const vec2 direction = (target - position).normalized();
     tank_sprite->set_frame(((abs(direction.x) > abs(direction.y)) ? ((direction.x < 0) ? 3 : 0) : ((direction.y < 0) ? 9 : 6)) + (current_frame / 3));
     tank_sprite->draw(screen, (int)position.x - 7 + HEALTHBAR_OFFSET, (int)position.y - 9);
 }
@@ -124,7 +121,7 @@ int Tank::compare_health(const Tank& other) const
 }
 
 //Add some force in a given direction
-void Tank::push(vec2 direction, float magnitude)
+void Tank::push(const vec2 direction, const float magnitude)
 {
     force += direction * magnitude;
 }

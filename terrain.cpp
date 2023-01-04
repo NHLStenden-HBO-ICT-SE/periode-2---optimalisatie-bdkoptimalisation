@@ -1,12 +1,10 @@
 #include "precomp.h"
 #include "terrain.h"
-#include <iostream>
-#include <queue>
 
 namespace fs = std::filesystem;
 namespace Tmpl8
 {
-    
+
     // Define the pair type for readability
     typedef std::pair<float, std::vector<TerrainTile*>> FloatVectorPair;
     //creating struct for comparison in prioritized queue. this is where the heuristic is defined. min heap sorting
@@ -16,12 +14,9 @@ namespace Tmpl8
 
         }
     };
-
+    
     Terrain::Terrain()
     {
-
-      
-
         //Load in terrain sprites
         grass_img = std::make_unique<Surface>("assets/tile_grass.png");
         forest_img = std::make_unique<Surface>("assets/tile_forest.png");
@@ -35,6 +30,7 @@ namespace Tmpl8
         tile_rocks = std::make_unique<Sprite>(rocks_img.get(), 1);
         tile_water = std::make_unique<Sprite>(water_img.get(), 1);
         tile_mountains = std::make_unique<Sprite>(mountains_img.get(), 1);
+
 
         //Load terrain layout file and fill grid based on tiletypes
         fs::path terrain_file_path{ "assets/terrain.txt" };
@@ -90,15 +86,15 @@ namespace Tmpl8
         //Instantiate tiles for path planning
         for (size_t y = 0; y < tiles.size(); y++)
         {
-            for (size_t x = 0; x < tiles.at(y).size(); x++)
+            for (size_t x = 0; x < tiles[y].size(); x++)
             {
-                tiles.at(y).at(x).position_x = x;
-                tiles.at(y).at(x).position_y = y;
+                tiles[y][x].position_x = x;
+                tiles[y][x].position_y = y;
 
-                if (is_accessible(y, x + 1)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y).at(x + 1)); }
-                if (is_accessible(y, x - 1)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y).at(x - 1)); }
-                if (is_accessible(y + 1, x)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y + 1).at(x)); }
-                if (is_accessible(y - 1, x)) { tiles.at(y).at(x).exits.push_back(&tiles.at(y - 1).at(x)); }
+                if (is_accessible(y, x + 1)) { tiles[y][x].exits.push_back(&tiles[y][x + 1]); }
+                if (is_accessible(y, x - 1)) { tiles[y][x].exits.push_back(&tiles[y][x - 1]); }
+                if (is_accessible(y + 1, x)) { tiles[y][x].exits.push_back(&tiles[y + 1][x]); }
+                if (is_accessible(y - 1, x)) { tiles[y][x].exits.push_back(&tiles[y - 1][x]); }
             }
         }
     }
@@ -115,8 +111,8 @@ namespace Tmpl8
         {
             for (size_t x = 0; x < tiles.at(y).size(); x++)
             {
-                int posX = (x * sprite_size) + HEALTHBAR_OFFSET;
-                int posY = y * sprite_size;
+                const int posX = (x * sprite_size) + HEALTHBAR_OFFSET;
+                const int posY = y * sprite_size;
 
                 switch (tiles.at(y).at(x).tile_type)
                 {
@@ -166,10 +162,10 @@ namespace Tmpl8
         {
             current_route = queue.front();
             queue.pop();
-            TerrainTile* current_tile = current_route.back();
+            const TerrainTile* current_tile = current_route.back();
 
             //Check all exits, if target then done, else if unvisited push a new partial route
-            for (TerrainTile* exit : current_tile->exits)
+            for (TerrainTile * exit : current_tile->exits)
             {
                 if (exit->position_x == target_x && exit->position_y == target_y)
                 {
@@ -177,7 +173,7 @@ namespace Tmpl8
                     route_found = true;
                     break;
                 }
-                else if (!exit->visited)
+                if (!exit->visited)
                 {
                     exit->visited = true;
                     visited.push_back(exit);
@@ -188,7 +184,7 @@ namespace Tmpl8
         }
 
         //Reset tiles
-        for (TerrainTile* tile : visited)
+        for (TerrainTile * tile : visited)
         {
             tile->visited = false;
         }
@@ -197,99 +193,16 @@ namespace Tmpl8
         {
             //Convert route to vec2 to prevent dangling pointers
             std::vector<vec2> route;
-            for (TerrainTile* tile : current_route)
+            route.reserve(current_route.size());
+            for (const TerrainTile* tile : current_route)
             {
-                route.push_back(vec2((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size));
+                route.emplace_back((float)tile->position_x * sprite_size, (float)tile->position_y * sprite_size);
             }
 
             return route;
         }
-        else
-        {
-            return  std::vector<vec2>();
-        }
-
+        return {};
     }
-
-
-    //Use A* search to find shortest route to the destination
-    vector<vec2> Terrain::get_route_quicker(const Tank& tank, const vec2& target)
-    {
-        //Find start and target tile
-        const size_t pos_x = tank.position.x / sprite_size;
-        const size_t pos_y = tank.position.y / sprite_size;
-
-        const size_t target_x = target.x / sprite_size;
-        const size_t target_y = target.y / sprite_size;
-
-        //Init queue, using a priority que to implement A* heuristics. the heuristic is defined in CompareDist struct on the top of the file
-        priority_queue<FloatVectorPair, vector<FloatVectorPair>, CompareDist> queue;
-        //setting distance of starter tile
-        //adding start tile
-        queue.push({0, {&tiles.at(pos_y).at(pos_x)}});
-        std::vector<TerrainTile*> visited;
-
-        bool route_found = false;
-        float current_cost = 0;
-        vector<TerrainTile*> current_route;
-        while (!queue.empty() && !route_found)
-        {
-            current_cost = queue.top().first;
-            current_route = queue.top().second;
-            queue.pop();
-            TerrainTile* current_tile = current_route.back();
-           
-            //Check all exits, if target then done, else if unvisited push a new partial route
-            for (TerrainTile* exit : current_tile->exits)
-            {
-
-                if (exit->position_x == target_x && exit->position_y == target_y)
-                {
-                    current_route.push_back(exit);
-                    route_found = true;
-                    break;
-                }
-                else if (!exit->visited)
-                {
-                    exit->visited = true;
-                    visited.push_back(exit);
-                    float cost = getDistanceToTarget(exit, &tiles.at(target_y).at(target_x));
-                    current_route.push_back(exit);
-                    queue.push({cost, current_route });
-                    current_route.pop_back();
-                }
-            }
-        }
-
-        //Reset tiles
-        for (TerrainTile* tile : visited)
-        {
-            tile->visited = false;
-        }
-
-        if (route_found)
-        {
-            //Convert route to vec2 to prevent dangling pointers
-            std::vector<vec2> route;
-            for (TerrainTile* tile : current_route)
-            {
-                route.push_back(vec2(tile->position_x * sprite_size, tile->position_y * sprite_size));
-            }
-
-            return route;
-        }
-        else
-        {
-            return  std::vector<vec2>();
-        }
-
-    }
-
-    //for calculating the distance between 2 tiles
-     float Terrain::getDistanceToTarget(const TerrainTile* currentTile, const TerrainTile* destination ) const {
-       return fabs(((destination->position_x) - (currentTile->position_x)) + ((destination->position_y) - ((currentTile->position_y))));
-    }
-    
 
     //TODO: Function not used, convert BFS to dijkstra and take speed into account next year :)
     float Terrain::get_speed_modifier(const vec2& position) const
@@ -320,18 +233,88 @@ namespace Tmpl8
         }
     }
 
-    bool Terrain::is_accessible(int y, int x)
+
+    //for calculating the distance between 2 tiles
+    float Terrain::get_distance_to_target(const TerrainTile* current_tile, const TerrainTile* destination ) const
     {
-        //Bounds check
-        if ((x >= 0 && x < terrain_width) && (y >= 0 && y < terrain_height))
+        return fabs((((float)destination->position_x) - ((float)current_tile->position_x)) + (((float)destination->position_y) - ((float)current_tile->position_y)));
+    }
+
+    //Use A* search to find shortest route to the destination
+    vector<vec2> Terrain::a_star(const Tank& tank, const vec2& target)
+    {
+        //Find start and target tile
+        const size_t pos_x = tank.position.x / sprite_size;
+        const size_t pos_y = tank.position.y / sprite_size;
+
+        const size_t target_x = target.x / sprite_size;
+        const size_t target_y = target.y / sprite_size;
+
+        //Init queue, using a priority que to implement A* heuristics. the heuristic is defined in CompareDist struct on the top of the file
+        priority_queue<FloatVectorPair, vector<FloatVectorPair>, CompareDist> queue;
+        //setting distance of starter tile
+        //adding start tile
+        queue.push({0, {&tiles.at(pos_y).at(pos_x)}});
+        std::vector<TerrainTile*> visited;
+
+        bool route_found = false;
+        vector<TerrainTile*> current_route;
+        while (!queue.empty() && !route_found)
         {
-            //Inaccessible terrain check
-            if (tiles.at(y).at(x).tile_type != TileType::MOUNTAINS && tiles.at(y).at(x).tile_type != TileType::WATER)
+            current_route = queue.top().second;
+            queue.pop();
+            const TerrainTile* current_tile = current_route.back();
+           
+            //Check all exits, if target then done, else if unvisited push a new partial route
+            for (TerrainTile* exit : current_tile->exits)
             {
-                return true;
+
+                if (exit->position_x == target_x && exit->position_y == target_y)
+                {
+                    current_route.push_back(exit);
+                    route_found = true;
+                    break;
+                }
+                else if (!exit->visited)
+                {
+                    exit->visited = true;
+                    visited.push_back(exit);
+                    float cost = get_distance_to_target(exit, &tiles.at(target_y).at(target_x));
+                    current_route.push_back(exit);
+                    queue.push({cost, current_route });
+                    current_route.pop_back();
+                }
             }
         }
 
-        return false;
+        //Reset tiles
+        for (TerrainTile* tile : visited)
+        {
+            tile->visited = false;
+        }
+
+        if (route_found)
+        {
+            //Convert route to vec2 to prevent dangling pointers
+            std::vector<vec2> route;
+            for (const TerrainTile* tile : current_route)
+            {
+                route.push_back(vec2(tile->position_x * sprite_size, tile->position_y * sprite_size));
+            }
+
+            return route;
+        }
+        else
+        {
+            return  std::vector<vec2>();
+        }
+
+    }
+
+    
+    bool Terrain::is_accessible(const int y, const int x) const
+    {
+        //Bounds check
+        return (x >= 0 && x < terrain_width && (y >= 0 && y < terrain_height)) && tiles[y][x].tile_type != MOUNTAINS && tiles[y][x].tile_type != WATER;
     }
 }

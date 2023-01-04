@@ -14,17 +14,17 @@ bool Surface::fontInitialized = false;
 // True-color surface class implementation
 // -----------------------------------------------------------
 
-Surface::Surface(int a_Width, int a_Height, Pixel* a_Buffer, int a_Pitch) : m_Buffer(a_Buffer),
-                                                                            m_Width(a_Width),
-                                                                            m_Height(a_Height),
-                                                                            m_Pitch(a_Pitch)
+Surface::Surface(const int a_Width, const int a_Height, Pixel* a_Buffer, const int a_Pitch) : m_Buffer(a_Buffer),
+                                                                                              m_Width(a_Width),
+                                                                                              m_Height(a_Height),
+                                                                                              m_Pitch(a_Pitch)
 {
     m_Flags = 0;
 }
 
-Surface::Surface(int a_Width, int a_Height) : m_Width(a_Width),
-                                              m_Height(a_Height),
-                                              m_Pitch(a_Width)
+Surface::Surface(const int a_Width, const int a_Height) : m_Width(a_Width),
+                                                          m_Height(a_Height),
+                                                          m_Pitch(a_Width)
 {
     m_Buffer = (Pixel*)MALLOC64(a_Width * a_Height * sizeof(Pixel));
     m_Flags = OWNER;
@@ -76,7 +76,7 @@ Surface::~Surface()
     }
 }
 
-void Surface::clear(Pixel a_Color)
+void Surface::clear(const Pixel a_Color) const
 {
     int s = m_Width * m_Height;
     for (int i = 0; i < s; i++) m_Buffer[i] = a_Color;
@@ -88,7 +88,7 @@ void Surface::centre(const char* a_String, int y1, Pixel color)
     print(a_String, x, y1, color);
 }
 
-void Surface::print(const char* a_String, int x1, int y1, Pixel color)
+void Surface::print(const char* a_String, const int x1, const int y1, const Pixel color)
 {
     if (!fontInitialized)
     {
@@ -111,7 +111,7 @@ void Surface::print(const char* a_String, int x1, int y1, Pixel color)
     }
 }
 
-void Surface::resize(Surface* a_Orig)
+void Surface::resize(Surface* a_Orig) const
 {
     Pixel *src = a_Orig->get_buffer(), *dst = m_Buffer;
     int u, v, owidth = a_Orig->get_width(), oheight = a_Orig->get_height();
@@ -153,25 +153,22 @@ void Surface::line(float x1, float y1, float x2, float y2, Pixel c)
             accept = true;
             break;
         }
-        else if (c0 & c1)
+        if (c0 & c1)
             break;
+        float x, y;
+        const int co = c0 ? c0 : c1;
+        if (co & 8)
+            x = x1 + (x2 - x1) * (ymax - y1) / (y2 - y1), y = ymax;
+        else if (co & 4)
+            x = x1 + (x2 - x1) * (ymin - y1) / (y2 - y1), y = ymin;
+        else if (co & 2)
+            y = y1 + (y2 - y1) * (xmax - x1) / (x2 - x1), x = xmax;
+        else if (co & 1)
+            y = y1 + (y2 - y1) * (xmin - x1) / (x2 - x1), x = xmin;
+        if (co == c0)
+            x1 = x, y1 = y, c0 = OUTCODE(x1, y1);
         else
-        {
-            float x, y;
-            const int co = c0 ? c0 : c1;
-            if (co & 8)
-                x = x1 + (x2 - x1) * (ymax - y1) / (y2 - y1), y = ymax;
-            else if (co & 4)
-                x = x1 + (x2 - x1) * (ymin - y1) / (y2 - y1), y = ymin;
-            else if (co & 2)
-                y = y1 + (y2 - y1) * (xmax - x1) / (x2 - x1), x = xmax;
-            else if (co & 1)
-                y = y1 + (y2 - y1) * (xmin - x1) / (x2 - x1), x = xmin;
-            if (co == c0)
-                x1 = x, y1 = y, c0 = OUTCODE(x1, y1);
-            else
-                x2 = x, y2 = y, c1 = OUTCODE(x2, y2);
-        }
+            x2 = x, y2 = y, c1 = OUTCODE(x2, y2);
     }
     if (!accept) return;
     float b = x2 - x1;

@@ -6,18 +6,18 @@ namespace Tmpl8
 class Rocket
 {
   public:
-    Rocket(vec2 position, vec2 direction, float collision_radius, allignments allignment, Sprite* rocket_sprite);
+    Rocket(vec2 position, vec2 direction, uint8_t collision_radius, allignments allignment, Sprite* rocket_sprite);
     ~Rocket();
 
     void tick();
     void draw(Surface* screen);
 
-    bool intersects(vec2 position_other, float radius_other) const;
+    auto intersects(vec2 position_other, uint8_t radius_other) const -> bool;
 
     vec2 position;
     vec2 speed;
 
-    float collision_radius;
+    uint8_t collision_radius;
 
     bool active;
 

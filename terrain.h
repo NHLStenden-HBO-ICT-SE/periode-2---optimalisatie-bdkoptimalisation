@@ -44,11 +44,13 @@ namespace Tmpl8
 
 
         float get_speed_modifier(const vec2& position) const;
+        float get_distance_to_target(const TerrainTile* current_tile, const TerrainTile* destination) const;
+        vector<vec2> a_star(const Tank& tank, const vec2& target);
 
 
     private:
 
-        bool is_accessible(int y, int x);
+        bool is_accessible(int y, int x) const;
 
         static constexpr int sprite_size = 16;
         static constexpr size_t terrain_width = 80;
