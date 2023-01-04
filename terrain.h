@@ -39,6 +39,8 @@ namespace Tmpl8
         vector<vec2> get_route(const Tank& tank, const vec2& target);
 
         float get_speed_modifier(const vec2& position) const;
+        float get_distance_to_target(const TerrainTile* current_tile, const TerrainTile* destination) const;
+        vector<vec2> a_star(const Tank& tank, const vec2& target);
 
 
     private:

@@ -21,7 +21,9 @@ class Game
     void draw_health_bars(const std::vector<const Tank*>& sorted_tanks, const int team) const;
     void measure_performance();
 
-    Tank& find_closest_enemy(Tank& current_tank);
+    Tank& find_closest_enemy(const Tank& current_tank);
+    static std::vector<const Tank*> merge_sort_tanks_health(const std::vector<Tank>& original, int begin, int end);
+    static std::vector<const Tank*> merge(std::vector<const Tank*> left, std::vector<const Tank*> right);
 
     void mouse_up(int button)
     { /* implement if you want to detect mouse button presses */

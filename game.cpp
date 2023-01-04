@@ -91,7 +91,7 @@ void Game::shutdown()
 // -----------------------------------------------------------
 // Iterates through all tanks and returns the closest enemy tank for the given tank
 // -----------------------------------------------------------
-Tank& Game::find_closest_enemy(Tank& current_tank)
+Tank& Game::find_closest_enemy(const Tank& current_tank)
 {
     float closest_distance = numeric_limits<float>::infinity();
     int closest_index = 0;
@@ -110,6 +110,75 @@ Tank& Game::find_closest_enemy(Tank& current_tank)
     }
 
     return tanks.at(closest_index);
+}
+
+std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, const int begin,
+                                                              const int end)
+{
+    const int NUM_TANKS = end - begin;
+
+    if (NUM_TANKS < 2)
+    {
+        std::vector<const Tank*> return_vector;
+        return_vector.emplace_back(&original.at(begin));
+        return return_vector;
+    }
+
+    const int mid = (begin + end) / 2;
+    const std::vector<const Tank*> left = merge_sort_tanks_health(original, begin, mid);
+    const std::vector<const Tank*> right = merge_sort_tanks_health(original, mid, end);
+
+    return merge(left, right);
+}
+
+std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::vector<const Tank*> right)
+{
+    std::vector<const Tank*> tanks;
+    tanks.reserve(left.size() + right.size());
+
+    while (!left.empty() && !right.empty())
+    {
+        if (left[0]->active == false)
+            left.erase(left.begin());
+        else if (right[0]->active == false)
+            right.erase(right.begin());
+        else if (left[0]->compare_health(*right[0]) <= 0)
+        {
+            tanks.emplace_back(left[0]);
+            left.erase(left.begin());
+            left.shrink_to_fit();
+        }
+        else
+        {
+            tanks.emplace_back(right[0]);
+            right.erase(right.begin());
+            right.shrink_to_fit();
+        }
+    }
+    while (!left.empty() && right.empty())
+    {
+        if (left[0]->active == false)
+            left.erase(left.begin());
+        else
+        {
+            tanks.emplace_back(left[0]);
+            left.erase(left.begin());
+        }
+        left.shrink_to_fit();
+    }
+    while (left.empty() && !right.empty())
+    {
+        if (right[0]->active == false)
+            right.erase(right.begin());
+        else
+        {
+            tanks.emplace_back(right[0]);
+            right.erase(right.begin());
+        }
+        right.shrink_to_fit();
+    }
+
+    return tanks;
 }
 
 //Checks if a point lies on the left of an arbitrary angled line
@@ -320,7 +389,7 @@ void Game::update()
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
         for (Tank& t : tanks)
-            t.set_route(background_terrain.get_route(t, t.target));
+            t.set_route(background_terrain.a_star(t, t.target));
 
     collision();
     update_tanks();
@@ -400,11 +469,10 @@ void Game::draw()
     //Draw sorted health bars
     for (int t = 0; t < 2; t++)
     {
-        const int NUM_TANKS = ((t < 1) ? num_tanks_blue : num_tanks_red);
+        const int num_tanks = ((t < 1) ? num_tanks_blue : num_tanks_red);
 
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
-        std::vector<const Tank*> sorted_tanks;
-        insertion_sort_tanks_health(tanks, sorted_tanks, begin, begin + NUM_TANKS);
+        std::vector<const Tank*> sorted_tanks = merge_sort_tanks_health(tanks, begin, begin + num_tanks);
         sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(),
                                           [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
