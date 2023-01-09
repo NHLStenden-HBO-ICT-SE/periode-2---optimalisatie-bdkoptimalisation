@@ -38,7 +38,7 @@ class ThreadPool
 
     ThreadPool() : stop(false)
     {
-        for (size_t i = 0; i < (std::thread::hardware_concurrency() -1); ++i)
+        for (size_t i = 0; i < (std::thread::hardware_concurrency() - 2); ++i)
             workers.push_back(std::thread(Worker(*this)));
     }
 
@@ -70,7 +70,6 @@ class ThreadPool
         //Wake up a thread to start this task
         condition.notify_one();
 
-        availableT--;
 
         return wrapper->get_future();
     }
@@ -78,7 +77,7 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
 
-    int availableT = (std::thread::hardware_concurrency() - 1);
+    int availableT = (std::thread::hardware_concurrency() - 2);
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
@@ -103,14 +102,21 @@ inline void Worker::operator()()
             //Because of spurious wakeups we need to check if there is actually a task available or we are stopping
             pool.condition.wait(locker, [=] { return pool.stop || !pool.tasks.empty(); });
 
-            if (pool.stop) break;
+            if (pool.stop) {
+                pool.availableT++;
+                break;
+            }
 
             task = pool.tasks.front();
             pool.tasks.pop_front();
         }
 
         task();
-        pool.availableT++;
+        
+        if (pool.availableT > 15)
+        {
+            printf("error");
+        }
     }
 }
 
