@@ -126,17 +126,19 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
 
     const int mid = (begin + end) / 2;
     std::vector<const Tank*> right;
-    if (pool.get_avail_threads())
+    std::vector<const Tank*> left;
+    if (pool.avail_threads())
     {
-        auto task = pool.enqueue([original, mid, end] { return merge_sort_tanks_health(original, mid, end); });
+        auto task = pool.enqueue([&original, mid, end] { return merge_sort_tanks_health(original, mid, end); });
+        left = merge_sort_tanks_health(original, begin, mid);
         right = task.get();
     }
     else
     {
+        left = merge_sort_tanks_health(original, begin, mid);
         right = merge_sort_tanks_health(original, mid, end);
     }
-    
-    const std::vector<const Tank*> left = merge_sort_tanks_health(original, begin, mid);
+   
     return merge(left, right);
 }
 

@@ -23,7 +23,10 @@ class ThreadPool
 {
 
   public:
-    bool  get_avail_threads() {
+      void decrement_avail_threads() {
+          availableT--;
+    }
+    bool  avail_threads() {
         return (availableT > 0);
     }
 
