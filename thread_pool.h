@@ -35,7 +35,7 @@ class ThreadPool
 
     ThreadPool() : stop(false)
     {
-        for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i)
+        for (size_t i = 0; i < (std::thread::hardware_concurrency() -1); ++i)
             workers.push_back(std::thread(Worker(*this)));
     }
 
@@ -75,7 +75,7 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
 
-    int availableT = std::thread::hardware_concurrency();
+    int availableT = (std::thread::hardware_concurrency() - 1);
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
