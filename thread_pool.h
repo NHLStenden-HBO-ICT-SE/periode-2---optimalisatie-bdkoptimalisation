@@ -75,7 +75,7 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
 
-    atomic<int> availableT{ std::thread::hardware_concurrency() - 2 };
+    atomic<int> availableT { std::thread::hardware_concurrency() - 2 };
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 

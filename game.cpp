@@ -399,8 +399,23 @@ void Game::update()
     //Calculate the route to the destination for each tank using BFS
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
-        for (Tank& t : tanks)
-            t.set_route(background_terrain.a_star(t, t.target));
+        for (Tank& t : tanks) {
+            while (true)
+            {
+                if (pool.avail_threads())
+                {
+                    pool.enqueue([&t]
+                        {
+                            t.set_route(Terrain().a_star(t, t.target));
+                        });
+                    break;
+                }
+
+            }
+        }
+
+    
+   
 
     collision();
     update_tanks();
