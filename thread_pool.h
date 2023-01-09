@@ -23,9 +23,6 @@ class ThreadPool
 {
 
   public:
-      void decrement_avail_threads() {
-          availableT--;
-    }
     bool  avail_threads() {
         return (availableT > 0);
     }
@@ -54,6 +51,7 @@ class ThreadPool
     template <class T>
     auto enqueue(T task) -> std::future<decltype(task())>
     {
+        availableT--;
         //Wrap the function in a packaged_task so we can return a future object
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
 
@@ -77,7 +75,7 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
 
-    int availableT = (std::thread::hardware_concurrency() - 2);
+    atomic<int> availableT{ std::thread::hardware_concurrency() - 2 };
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
@@ -102,22 +100,15 @@ inline void Worker::operator()()
             //Because of spurious wakeups we need to check if there is actually a task available or we are stopping
             pool.condition.wait(locker, [=] { return pool.stop || !pool.tasks.empty(); });
 
-            if (pool.stop) {
-                pool.availableT++;
-                break;
-            }
+            if (pool.stop) break;
 
             task = pool.tasks.front();
             pool.tasks.pop_front();
         }
 
         task();
-        
-        if (pool.availableT > 15)
-        {
-            printf("error");
-        }
     }
+    pool.availableT++;
 }
 
 } // namespace Tmpl8
