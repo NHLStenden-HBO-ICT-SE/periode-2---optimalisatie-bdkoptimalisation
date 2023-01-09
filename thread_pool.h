@@ -9,22 +9,33 @@ class Worker;
 
 class Worker
 {
+
   public:
     //Instantiate the worker class by passing and storing the threadpool as a reference
     Worker(ThreadPool& s) : pool(s) {}
 
     inline void operator()();
-
   private:
     ThreadPool& pool;
 };
 
 class ThreadPool
 {
+
   public:
+    bool  get_avail_threads() {
+        return (availableT > 0);
+    }
+
     ThreadPool(size_t numThreads) : stop(false)
     {
         for (size_t i = 0; i < numThreads; ++i)
+            workers.push_back(std::thread(Worker(*this)));
+    }
+
+    ThreadPool() : stop(false)
+    {
+        for (size_t i = 0; i < std::thread::hardware_concurrency(); ++i)
             workers.push_back(std::thread(Worker(*this)));
     }
 
@@ -56,12 +67,15 @@ class ThreadPool
         //Wake up a thread to start this task
         condition.notify_one();
 
+        availableT--;
+
         return wrapper->get_future();
     }
 
   private:
     friend class Worker; //Gives access to the private variables of this class
 
+    int availableT = std::thread::hardware_concurrency();
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
@@ -93,6 +107,7 @@ inline void Worker::operator()()
         }
 
         task();
+        pool.availableT++;
     }
 }
 

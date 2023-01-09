@@ -36,7 +36,7 @@ static Sprite explosion(explosion_img, 9);
 static Sprite particle_beam_sprite(particle_beam_img, 3);
 
 const static vec2 tank_size(7, 9);
-
+ThreadPool pool();
 static uint8_t tank_radius = 3;
 static uint8_t rocket_radius = 5;
 
@@ -126,6 +126,10 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
 
     const int mid = (begin + end) / 2;
     const std::vector<const Tank*> left = merge_sort_tanks_health(original, begin, mid);
+    if ()
+    {
+
+    }
     const std::vector<const Tank*> right = merge_sort_tanks_health(original, mid, end);
 
     return merge(left, right);
