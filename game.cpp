@@ -523,7 +523,7 @@ void Game::calculate_route_multithreaded(vector<Tank>& t) {
 
 
 //position is the portion it has to calculate
- void Tmpl8::Game::calc_route_singlethread(vector<Tank>& tanks, const int position, const int portion)
+ void Tmpl8::Game::calc_route_singlethread(vector<Tank>& tanks, const int& position, const int& portion)
 {
 
     Terrain terrain;
