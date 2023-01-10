@@ -403,7 +403,7 @@ void Game::update()
         for (size_t i = 0; i < pool.get_thread_count(); i++)
         {
 
-            if (pool.avail_threads())
+            if (false)
             {
                 pool.enqueue([this, i, portion] {calc_partial_route(i, portion);});
             }
@@ -455,10 +455,11 @@ void Game::update()
 
 void Game::calc_partial_route(const int position, const int portion) 
 {
-    const int start = position * portion;
+    Terrain t;
+   const int start = position * portion;
    for (size_t i = 0; i < portion; i++)
    {
-       tanks[start + i].set_route(Terrain().a_star(tanks[start + i], tanks[start + i].target));
+       tanks[start + i].set_route(background_terrain.a_star(tanks[start + i], tanks[start + i].target));
    }
 
 

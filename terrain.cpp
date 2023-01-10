@@ -275,9 +275,9 @@ namespace Tmpl8
                     route_found = true;
                     break;
                 }
-                else if (std::find(visited.begin(), visited.end(), exit) != visited.end())
+                else if (!exit->visited)
                 {
-                  //  exit->visited = true;
+                    exit->visited = true;
                     visited.push_back(exit);
                     float cost = get_distance_to_target(exit, &tiles.at(target_y).at(target_x));
                     current_route.push_back(exit);
@@ -286,7 +286,11 @@ namespace Tmpl8
                 }
             }
         }
-
+        //Reset tiles
+        for (TerrainTile* tile : visited)
+        {
+            tile->visited = false;
+        }
 
         if (route_found)
         {
