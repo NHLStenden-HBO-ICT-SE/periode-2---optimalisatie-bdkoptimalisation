@@ -112,8 +112,7 @@ Tank& Game::find_closest_enemy(const Tank& current_tank)
     return tanks.at(closest_index);
 }
 
-std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, const int begin,
-                                                              const int end)
+std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, const int begin, const int end)
 {
     const int NUM_TANKS = end - begin;
 
@@ -395,24 +394,12 @@ void Game::update()
 {
     // collision_tanks(tanks, 0);
 
-    int portion = tanks.size() / pool.get_thread_count();
+    
     //Calculate the route to the destination for each tank using BFS
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
     {
-        for (size_t i = 0; i < pool.get_thread_count(); i++)
-        {
-
-            if (false)
-            {
-                pool.enqueue([this, i, portion] {calc_partial_route(i, portion);});
-            }
-            else 
-            {
-                calc_partial_route(i, portion);
-            }
-
-        }
+        get_route_tanks_multithr(tanks);
     }
     
    
@@ -453,8 +440,9 @@ void Game::update()
                                     [](const Explosion& explosion) { return explosion.done(); }), explosions.end());
 }
 
-void Game::calc_partial_route(const int position, const int portion) 
+void Tmpl8::Game::calc_partial_route(vector<Tank>& t,const int position, const int portion)
 {
+    
     Terrain t;
    const int start = position * portion;
    for (size_t i = 0; i < portion; i++)
@@ -516,6 +504,29 @@ void Game::draw()
         draw_health_bars(sorted_tanks, t);
     }
 }
+
+void Game::get_route_tanks_multithr(vector<Tank>& t) {
+    int portion = tanks.size() / pool.get_thread_count();
+
+    for (size_t i = 0; i < pool.get_thread_count(); i++)
+    {
+
+        if (pool.avail_threads())
+        {
+            pool.enqueue([&t, i, portion] 
+                { 
+                    return calc_partial_route(t, i, portion); 
+                
+                });
+        }
+        else
+        {
+            calc_partial_route(tanks ,i, portion);
+        }
+
+    }
+}
+
 
 // -----------------------------------------------------------
 // Sort tanks by health value using insertion sort
