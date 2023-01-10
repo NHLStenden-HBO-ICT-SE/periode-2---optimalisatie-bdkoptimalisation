@@ -24,7 +24,7 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
     const uint max_Threads = std::thread::hardware_concurrency();
-    atomic<int> availableT{ std::thread::hardware_concurrency() - 1};
+    atomic<int> available_threads{ std::thread::hardware_concurrency() - 1};
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
@@ -34,8 +34,8 @@ class ThreadPool
     bool stop = false;
 
   public:
-    bool  avail_threads() {
-        return (availableT > 0);
+    bool  threads_available() {
+        return (available_threads > 0);
     }
 
     uint get_thread_count() {
@@ -66,7 +66,7 @@ class ThreadPool
     template <class T>
     auto enqueue(T task) -> std::future<decltype(task())>
     {
-        availableT--;
+        available_threads--;
         //Wrap the function in a packaged_task so we can return a future object
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
 
@@ -112,7 +112,7 @@ inline void Worker::operator()()
 
         task();
     }
-    pool.availableT++;
+    pool.available_threads++;
 }
 
 } // namespace Tmpl8

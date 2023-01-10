@@ -399,7 +399,7 @@ void Game::update()
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
     {
-        get_route_tanks_multithr(tanks);
+        calculate_route_multithreaded(tanks);
     }
     
    
@@ -494,7 +494,7 @@ void Game::draw()
     }
 }
 
-void Game::get_route_tanks_multithr(vector<Tank>& t) {
+void Game::calculate_route_multithreaded(vector<Tank>& t) {
     int portion = tanks.size() / pool.get_thread_count();
 
     for (size_t i = 0; i < pool.get_thread_count(); i++)
@@ -503,17 +503,19 @@ void Game::get_route_tanks_multithr(vector<Tank>& t) {
         if (pool.avail_threads())
         {
            
-            pool.enqueue([&t, i, portion] { calc_partial_route(t, i, portion); });
+            pool.enqueue([&t, i, portion] { calc_route_singlethread(t, i, portion); });
         }
         else
         {
-            calc_partial_route(tanks ,i, portion);
+            calc_route_singlethread(tanks ,i, portion);
         }
 
     }
 }
 
- void Tmpl8::Game::calc_partial_route(vector<Tank>& tanks, const int position, const int portion)
+
+//position is the portion it has to calculate
+ void Tmpl8::Game::calc_route_singlethread(vector<Tank>& tanks, const int position, const int portion)
 {
 
     Terrain terrain;

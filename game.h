@@ -15,10 +15,10 @@ class Game
     void init();
     static void shutdown();
     void update();
-    static void calc_route_multithreaded(vector<Tank>& t,int position, int portion);
+    static void calc_route_singlethread(vector<Tank>& t,int position, int portion);
     void draw();
     void tick();
-    void get_route_tanks_multithr(vector<Tank>& t);
+    void calculate_route_multithreaded(vector<Tank>& t);
     static void insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end);
     void draw_health_bars(const std::vector<const Tank*>& sorted_tanks, const int team) const;
     void measure_performance();
