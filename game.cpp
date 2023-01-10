@@ -406,7 +406,10 @@ void Game::update()
             if (pool.avail_threads())
             {
                 pool.enqueue([this, i, portion] {calc_partial_route(i, portion);});
-                break;
+            }
+            else 
+            {
+                calc_partial_route(i, portion);
             }
 
         }
