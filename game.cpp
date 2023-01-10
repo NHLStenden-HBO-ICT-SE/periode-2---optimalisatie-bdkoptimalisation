@@ -126,7 +126,7 @@ std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<
     const int mid = (begin + end) / 2;
     std::vector<const Tank*> right;
     std::vector<const Tank*> left;
-    if (pool.avail_threads())
+    if (pool.threads_available())
     {
         auto task = pool.enqueue([&original, mid, end] { return merge_sort_tanks_health(original, mid, end); });
         left = merge_sort_tanks_health(original, begin, mid);
@@ -496,14 +496,14 @@ void Game::draw()
 
 void Game::calculate_route_multithreaded(vector<Tank>& t) {
     int portion = tanks.size() / pool.get_thread_count();
-
+    std::vector<std::future<void>> futures;
     for (size_t i = 0; i < pool.get_thread_count(); i++)
     {
 
-        if (pool.avail_threads())
+        if (pool.threads_available())
         {
            
-            pool.enqueue([&t, i, portion] { calc_route_singlethread(t, i, portion); });
+            futures.push_back(pool.enqueue([&t, i, portion] { calc_route_singlethread(t, i, portion); }));
         }
         else
         {
@@ -511,7 +511,15 @@ void Game::calculate_route_multithreaded(vector<Tank>& t) {
         }
 
     }
+
+    for (auto& f : futures)
+    {
+        f.wait();
+    }
 }
+
+
+
 
 
 //position is the portion it has to calculate
