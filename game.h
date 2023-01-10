@@ -15,6 +15,7 @@ class Game
     void init();
     static void shutdown();
     void update();
+    void calc_partial_route(int position, int portion);
     void draw();
     void tick();
     static void insertion_sort_tanks_health(const std::vector<Tank>& original, std::vector<const Tank*>& sorted_tanks, int begin, int end);

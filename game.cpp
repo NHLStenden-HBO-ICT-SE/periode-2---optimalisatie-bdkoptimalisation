@@ -405,7 +405,7 @@ void Game::update()
 
             if (pool.avail_threads())
             {
-                pool.enqueue(calc_partial_route, std::ref(tanks), i, portion);
+                pool.enqueue([this, i, portion] {calc_partial_route(i, portion);});
                 break;
             }
 
@@ -450,9 +450,9 @@ void Game::update()
                                     [](const Explosion& explosion) { return explosion.done(); }), explosions.end());
 }
 
-void calc_partial_route(std::vector<Tank>& tanks, int position, int portion) 
+void Game::calc_partial_route(const int position, const int portion) 
 {
-   int start = position * portion;
+    const int start = position * portion;
    for (size_t i = 0; i < portion; i++)
    {
        tanks[start + i].set_route(Terrain().a_star(tanks[start + i], tanks[start + i].target));
