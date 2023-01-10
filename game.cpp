@@ -440,18 +440,7 @@ void Game::update()
                                     [](const Explosion& explosion) { return explosion.done(); }), explosions.end());
 }
 
-void Tmpl8::Game::calc_partial_route(vector<Tank>& t,const int position, const int portion)
-{
-    
-    Terrain t;
-   const int start = position * portion;
-   for (size_t i = 0; i < portion; i++)
-   {
-       tanks[start + i].set_route(background_terrain.a_star(tanks[start + i], tanks[start + i].target));
-   }
 
-
-}
 // -----------------------------------------------------------
 // Draw all sprites to the screen
 // (It is not recommended to multi-thread this function)
@@ -513,11 +502,8 @@ void Game::get_route_tanks_multithr(vector<Tank>& t) {
 
         if (pool.avail_threads())
         {
-            pool.enqueue([&t, i, portion] 
-                { 
-                    return calc_partial_route(t, i, portion); 
-                
-                });
+           
+            pool.enqueue([&t, i, portion] { calc_partial_route(t, i, portion); });
         }
         else
         {
@@ -527,6 +513,18 @@ void Game::get_route_tanks_multithr(vector<Tank>& t) {
     }
 }
 
+ void Tmpl8::Game::calc_partial_route(vector<Tank>& tanks, const int position, const int portion)
+{
+
+    Terrain terrain;
+    const int start = position * portion;
+    for (size_t i = 0; i < portion; i++)
+    {
+        tanks[start + i].set_route(terrain.a_star(tanks[start + i], tanks[start + i].target));
+    }
+
+
+}
 
 // -----------------------------------------------------------
 // Sort tanks by health value using insertion sort

@@ -15,7 +15,7 @@ class Game
     void init();
     static void shutdown();
     void update();
-    void calc_partial_route(vector<Tank>& t,int position, int portion);
+    static void calc_route_multithreaded(vector<Tank>& t,int position, int portion);
     void draw();
     void tick();
     void get_route_tanks_multithr(vector<Tank>& t);
