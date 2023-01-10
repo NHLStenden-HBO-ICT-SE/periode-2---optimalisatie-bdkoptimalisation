@@ -21,10 +21,25 @@ class Worker
 
 class ThreadPool
 {
+  private:
+    friend class Worker; //Gives access to the private variables of this class
+    const uint max_Threads = std::thread::hardware_concurrency();
+    atomic<int> availableT{ std::thread::hardware_concurrency() - 1};
+    std::vector<std::thread> workers;
+    std::deque<std::function<void()>> tasks;
+
+    std::condition_variable condition; //Wakes up a thread when work is available
+
+    std::mutex queue_mutex; //Lock for our queue
+    bool stop = false;
 
   public:
     bool  avail_threads() {
         return (availableT > 0);
+    }
+
+    uint get_thread_count() {
+        return max_Threads;
     }
 
     ThreadPool(size_t numThreads) : stop(false)
@@ -35,7 +50,7 @@ class ThreadPool
 
     ThreadPool() : stop(false)
     {
-        for (size_t i = 0; i < (std::thread::hardware_concurrency() - 2); ++i)
+        for (size_t i = 0; i < (std::thread::hardware_concurrency() - 1); ++i)
             workers.push_back(std::thread(Worker(*this)));
     }
 
@@ -72,17 +87,6 @@ class ThreadPool
         return wrapper->get_future();
     }
 
-  private:
-    friend class Worker; //Gives access to the private variables of this class
-
-    atomic<int> availableT { std::thread::hardware_concurrency() - 2 };
-    std::vector<std::thread> workers;
-    std::deque<std::function<void()>> tasks;
-
-    std::condition_variable condition; //Wakes up a thread when work is available
-
-    std::mutex queue_mutex; //Lock for our queue
-    bool stop = false;
 };
 
 inline void Worker::operator()()

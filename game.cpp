@@ -395,25 +395,22 @@ void Game::update()
 {
     // collision_tanks(tanks, 0);
 
-
+    int portion = tanks.size() / pool.get_thread_count();
     //Calculate the route to the destination for each tank using BFS
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
-        for (Tank& t : tanks) {
-            while (true)
+    {
+        for (size_t i = 0; i < pool.get_thread_count(); i++)
+        {
+
+            if (pool.avail_threads())
             {
-                if (pool.avail_threads())
-                {
-                    pool.enqueue([&t]
-                        {
-                            t.set_route(Terrain().a_star(t, t.target));
-                        });
-                    break;
-                }
-
+                pool.enqueue(calc_partial_route, std::ref(tanks), i, portion);
+                break;
             }
-        }
 
+        }
+    }
     
    
 
@@ -453,6 +450,16 @@ void Game::update()
                                     [](const Explosion& explosion) { return explosion.done(); }), explosions.end());
 }
 
+void calc_partial_route(std::vector<Tank>& tanks, int position, int portion) 
+{
+   int start = position * portion;
+   for (size_t i = 0; i < portion; i++)
+   {
+       tanks[start + i].set_route(Terrain().a_star(tanks[start + i], tanks[start + i].target));
+   }
+
+
+}
 // -----------------------------------------------------------
 // Draw all sprites to the screen
 // (It is not recommended to multi-thread this function)
