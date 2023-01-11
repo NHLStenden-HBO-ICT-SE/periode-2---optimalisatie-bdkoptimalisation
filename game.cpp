@@ -112,37 +112,44 @@ Tank& Game::find_closest_enemy(const Tank& current_tank)
     return tanks.at(closest_index);
 }
 
-std::vector<const Tank*> Tmpl8::Game::merge_sort_tanks_health(const std::vector<Tank>& original, const int begin,
-                                                              const int end)
+/**
+ * \brief sorts a vector with predicate
+ * \tparam T Type within vector
+ * \tparam Function Predicate Function type
+ * \param original original vector
+ * \param begin begin merge sort (usually 0)
+ * \param end end merge sort
+ * \param predicate function that takes two pointer arguments
+ * \return sorted vector
+ */
+template <typename T, typename Function>
+std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begin,
+                                                     const int end, const Function predicate)
 {
     const int NUM_TANKS = end - begin;
 
     if (NUM_TANKS < 2)
     {
-        std::vector<const Tank*> return_vector;
-        return_vector.emplace_back(&original.at(begin));
-        return return_vector;
+        return std::vector<T*>{&original.at(begin)};
     }
 
     const int mid = (begin + end) / 2;
-    const std::vector<const Tank*> left = merge_sort_tanks_health(original, begin, mid);
-    const std::vector<const Tank*> right = merge_sort_tanks_health(original, mid, end);
+    const std::vector<T*> left = merge_sort<T, Function>(original, begin, mid, predicate);
+    const std::vector<T*> right = merge_sort<T, Function>(original, mid, end, predicate);
 
-    return merge(left, right);
+    return merge<T, Function>(left, right, predicate);
 }
 
-std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::vector<const Tank*> right)
+template <typename T, typename Function>
+std::vector<T*> Tmpl8::Game::merge(std::vector<T*> left, std::vector<T*> right,
+                                   const Function predicate)
 {
-    std::vector<const Tank*> tanks;
+    std::vector<T*> tanks;
     tanks.reserve(left.size() + right.size());
 
     while (!left.empty() && !right.empty())
     {
-        if (left[0]->active == false)
-            left.erase(left.begin());
-        else if (right[0]->active == false)
-            right.erase(right.begin());
-        else if (left[0]->compare_health(*right[0]) <= 0)
+        if (predicate(left[0], right[0]))
         {
             tanks.emplace_back(left[0]);
             left.erase(left.begin());
@@ -157,24 +164,16 @@ std::vector<const Tank*> Tmpl8::Game::merge(std::vector<const Tank*> left, std::
     }
     while (!left.empty() && right.empty())
     {
-        if (left[0]->active == false)
-            left.erase(left.begin());
-        else
-        {
-            tanks.emplace_back(left[0]);
-            left.erase(left.begin());
-        }
+        tanks.emplace_back(left[0]);
+        left.erase(left.begin());
+
         left.shrink_to_fit();
     }
     while (left.empty() && !right.empty())
     {
-        if (right[0]->active == false)
-            right.erase(right.begin());
-        else
-        {
-            tanks.emplace_back(right[0]);
-            right.erase(right.begin());
-        }
+        tanks.emplace_back(right[0]);
+        right.erase(right.begin());
+
         right.shrink_to_fit();
     }
 
@@ -382,9 +381,6 @@ void Game::update_particle_beams()
 // -----------------------------------------------------------
 void Game::update()
 {
-    // collision_tanks(tanks, 0);
-
-
     //Calculate the route to the destination for each tank using BFS
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
@@ -425,6 +421,11 @@ void Game::update()
     //remove when done with remove erase idiom
     explosions.erase(std::remove_if(explosions.begin(), explosions.end(),
                                     [](const Explosion& explosion) { return explosion.done(); }), explosions.end());
+}
+
+static bool tank_merge_sort_pred(const Tank* t1, const Tank* t2)
+{
+    return t1->compare_health(*t2) <= 0;
 }
 
 // -----------------------------------------------------------
@@ -472,7 +473,8 @@ void Game::draw()
         const int num_tanks = ((t < 1) ? num_tanks_blue : num_tanks_red);
 
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
-        std::vector<const Tank*> sorted_tanks = merge_sort_tanks_health(tanks, begin, begin + num_tanks);
+        std::vector<Tank*> sorted_tanks = merge_sort<Tank>(
+            tanks, begin, begin + num_tanks, tank_merge_sort_pred);
         sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(),
                                           [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
@@ -515,7 +517,7 @@ void Tmpl8::Game::insertion_sort_tanks_health(const std::vector<Tank>& original,
 // -----------------------------------------------------------
 // Draw the health bars based on the given tanks health values
 // -----------------------------------------------------------
-void Tmpl8::Game::draw_health_bars(const std::vector<const Tank*>& sorted_tanks, const int team) const
+void Tmpl8::Game::draw_health_bars(const std::vector<Tank*>& sorted_tanks, const int team) const
 {
     const int health_bar_start_x = (team < 1) ? 0 : (SCRWIDTH - HEALTHBAR_OFFSET) - 1;
     const int health_bar_end_x = (team < 1) ? health_bar_width : health_bar_start_x + health_bar_width - 1;
