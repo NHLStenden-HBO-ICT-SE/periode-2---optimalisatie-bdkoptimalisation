@@ -126,12 +126,9 @@ template <typename T, typename Function>
 std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begin,
                                                      const int end, const Function predicate)
 {
-    const int NUM_TANKS = end - begin;
-
-    if (NUM_TANKS < 2)
-    {
+    if (const int num_tanks = end - begin; num_tanks < 2) //stop condition
         return std::vector<T*>{&original.at(begin)};
-    }
+    
 
     const int mid = (begin + end) / 2;
     const std::vector<T*> left = merge_sort<T, Function>(original, begin, mid, predicate);
@@ -144,40 +141,40 @@ template <typename T, typename Function>
 std::vector<T*> Tmpl8::Game::merge(std::vector<T*> left, std::vector<T*> right,
                                    const Function predicate)
 {
-    std::vector<T*> tanks;
-    tanks.reserve(left.size() + right.size());
+    std::vector<T*> result_vector;
+    result_vector.reserve(left.size() + right.size());
 
     while (!left.empty() && !right.empty())
     {
         if (predicate(left[0], right[0]))
         {
-            tanks.emplace_back(left[0]);
+            result_vector.emplace_back(left[0]);
             left.erase(left.begin());
             left.shrink_to_fit();
         }
         else
         {
-            tanks.emplace_back(right[0]);
+            result_vector.emplace_back(right[0]);
             right.erase(right.begin());
             right.shrink_to_fit();
         }
     }
     while (!left.empty() && right.empty())
     {
-        tanks.emplace_back(left[0]);
+        result_vector.emplace_back(left[0]);
         left.erase(left.begin());
 
         left.shrink_to_fit();
     }
     while (left.empty() && !right.empty())
     {
-        tanks.emplace_back(right[0]);
+        result_vector.emplace_back(right[0]);
         right.erase(right.begin());
 
         right.shrink_to_fit();
     }
 
-    return tanks;
+    return result_vector;
 }
 
 //Checks if a point lies on the left of an arbitrary angled line
