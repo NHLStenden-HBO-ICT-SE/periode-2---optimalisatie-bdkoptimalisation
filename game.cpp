@@ -124,11 +124,11 @@ Tank& Game::find_closest_enemy(const Tank& current_tank)
  */
 template <typename T, typename Function>
 std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begin,
-                                                     const int end, const Function predicate)
+                                        const int end, const Function predicate)
 {
     if (const int num_tanks = end - begin; num_tanks < 2) //stop condition
         return std::vector<T*>{&original.at(begin)};
-    
+
 
     const int mid = (begin + end) / 2;
     const std::vector<T*> left = merge_sort<T, Function>(original, begin, mid, predicate);
@@ -247,41 +247,52 @@ void Game::find_first_active_tank(uint16_t& first_active) const
     }
 }
 
-void Game::calculate_convex_hull()
+
+bool static convex_hull_pred(const Tank* t1, const Tank* t2)
 {
-    uint16_t first_active = 0;
+    return t1->position.x < t2->position.x;
+}
 
-    //find first active tank
-    find_first_active_tank(first_active);
+void Game::convex_hull()
+{
+    const vector<Tank*> sorted_tanks = merge_sort(tanks, 0, tanks.size(), convex_hull_pred);
 
-
-    vec2 point_on_hull = tanks[first_active].position;
-    //Find left most tank position
-    for (const Tank& tank : tanks)
-        if (tank.position.x <= point_on_hull.x && tank.active)
-            point_on_hull = tank.position;
-
-
-    //Calculate convex hull for 'rocket barrier'
-    for (const Tank& tank : tanks)
+    //upper hull
+    std::vector<vec2> upper_hull;
+    for (int i = 0; i < sorted_tanks.size(); ++i)
     {
-        if (tank.active)
+        const Tank* tank = sorted_tanks[i];
+
+        if (!tank->active) continue;
+
+        while (upper_hull.size() >= 2 && left_of_line(
+            upper_hull[upper_hull.size() - 2], upper_hull.back(), tank->position))
         {
-            forcefield_hull.push_back(point_on_hull);
-            vec2 endpoint = tanks.at(first_active).position;
-
-            for (Tank& tank : tanks)
-            {
-                if (tank.active)
-                    if ((endpoint == point_on_hull) || left_of_line(point_on_hull, endpoint, tank.position))
-                        endpoint = tank.position;
-            }
-            point_on_hull = endpoint;
-
-            if (endpoint == forcefield_hull.at(0))
-                break;
+            upper_hull.pop_back();
         }
+
+        upper_hull.push_back(tank->position);
     }
+
+
+    //lower hull
+    std::vector<vec2> lower_hull;
+    for (int i = sorted_tanks.size() - 1; i >= 0; --i)
+    {
+        const Tank* tank = sorted_tanks[i];
+
+        if (!tank->active) continue;
+
+        while (lower_hull.size() >= 2 && left_of_line(
+            lower_hull[lower_hull.size() - 2], lower_hull.back(), tank->position))
+            lower_hull.pop_back();
+
+
+        lower_hull.push_back(tank->position);
+    }
+
+    forcefield_hull.insert(forcefield_hull.end(), upper_hull.begin(), upper_hull.end());
+    forcefield_hull.insert(forcefield_hull.end(), lower_hull.begin(), lower_hull.end());
 }
 
 void Game::update_rocket()
@@ -396,7 +407,7 @@ void Game::update()
     forcefield_hull.clear();
 
     //calculate convex hull
-    calculate_convex_hull();
+    convex_hull();
 
     //update rocket
     update_rocket();

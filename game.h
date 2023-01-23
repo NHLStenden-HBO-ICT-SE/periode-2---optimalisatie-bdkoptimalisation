@@ -78,6 +78,7 @@ namespace Tmpl8
         void collision();
         void update_tanks();
         void find_first_active_tank(uint16_t& first_active) const;
+        void convex_hull();
         void calculate_convex_hull();
         void update_rocket();
         void rocket_hits_convex();
