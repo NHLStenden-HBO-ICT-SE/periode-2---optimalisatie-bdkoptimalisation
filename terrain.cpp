@@ -286,7 +286,6 @@ namespace Tmpl8
                 }
             }
         }
-
         //Reset tiles
         for (TerrainTile* tile : visited)
         {
