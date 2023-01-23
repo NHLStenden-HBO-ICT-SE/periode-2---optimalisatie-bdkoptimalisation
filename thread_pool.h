@@ -34,9 +34,10 @@ class ThreadPool
     bool stop = false;
 
   public:
-    bool  threads_available() {
-        return (available_threads > 0);
-    }
+      std::mutex mutex_threadcount;
+      bool  threads_available() {
+          return (available_threads > 0);
+      }
 
     uint get_thread_count() {
         return max_Threads;
