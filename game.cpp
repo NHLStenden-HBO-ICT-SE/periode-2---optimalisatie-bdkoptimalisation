@@ -136,9 +136,12 @@ std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begi
     pool.mutex_threadcount.lock();
     if (pool.threads_available())
     {
-        auto task = pool.enqueue([&original, mid, end] { return merge_sort(original, mid, end, predicate); });
+        auto task = pool.enqueue([&original, mid, end, predicate]
+        {
+            return merge_sort(original, mid, end, predicate);
+        });
         pool.mutex_threadcount.unlock();
-        left = merge_sort(original, begin, mid);
+        left = merge_sort(original, begin, mid, predicate);
         right = task.get();
     }
     else
@@ -501,6 +504,7 @@ void Game::draw()
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
         std::vector<Tank*> sorted_tanks = merge_sort<Tank>(
             tanks, begin, begin + num_tanks, tank_merge_sort_pred);
+        
         sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(),
                                           [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
