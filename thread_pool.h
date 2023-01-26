@@ -24,7 +24,6 @@ class ThreadPool
   private:
     friend class Worker; //Gives access to the private variables of this class
     const uint max_Threads = std::thread::hardware_concurrency();
-    atomic<int> available_threads{ std::thread::hardware_concurrency() - 1};
     std::vector<std::thread> workers;
     std::deque<std::function<void()>> tasks;
 
@@ -34,7 +33,8 @@ class ThreadPool
     bool stop = false;
 
   public:
-      std::mutex mutex_threadcount;
+      atomic<int> available_threads = std::thread::hardware_concurrency() - 1;
+      std::mutex mutex_available_threads;
       bool  threads_available() {
           return (available_threads > 0);
       }
@@ -78,6 +78,7 @@ class ThreadPool
 
             tasks.push_back([=] {
                 (*wrapper)();
+                pool.available_threads++;
             });
         }
 
@@ -113,7 +114,7 @@ inline void Worker::operator()()
 
         task();
     }
-    pool.available_threads++;
+    
 }
 
 } // namespace Tmpl8

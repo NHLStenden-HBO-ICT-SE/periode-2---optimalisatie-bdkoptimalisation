@@ -50,7 +50,6 @@ void Game::init()
     frame_count_font = new Font("assets/digital_small.png", "ABCDEFGHIJKLMNOPQRSTUVWXYZ:?!=-0123456789.");
 
     tanks.reserve(num_tanks_blue + num_tanks_red);
-
     constexpr uint max_rows = 24;
 
     const float start_blue_x = tank_size.x + 40.0f;
@@ -133,20 +132,20 @@ std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begi
     const int mid = (begin + end) / 2;
     std::vector<T*> left;
     std::vector<T*> right;
-    pool.mutex_threadcount.lock();
+    pool.mutex_available_threads.lock();
     if (pool.threads_available())
     {
         auto task = pool.enqueue([&original, mid, end, predicate]
         {
             return merge_sort(original, mid, end, predicate);
         });
-        pool.mutex_threadcount.unlock();
+        pool.mutex_available_threads.unlock();
         left = merge_sort(original, begin, mid, predicate);
         right = task.get();
     }
     else
     {
-        pool.mutex_threadcount.unlock();
+        pool.mutex_available_threads.unlock();
         left = merge_sort<T, Function>(original, begin, mid, predicate);
         right = merge_sort<T, Function>(original, mid, end, predicate);
     }
@@ -518,15 +517,15 @@ void Game::calculate_route_multithreaded(vector<Tank>& t)
     std::vector<std::future<void>> futures;
     for (size_t i = 0; i < pool.get_thread_count(); i++)
     {
-        pool.mutex_threadcount.lock();
+        pool.mutex_available_threads.lock();
         if (pool.threads_available())
         {
             futures.push_back(pool.enqueue([&t, i, portion] { calc_route_singlethread(t, i, portion); }));
-            pool.mutex_threadcount.unlock();
+            pool.mutex_available_threads.unlock();
         }
         else
         {
-            pool.mutex_threadcount.unlock();
+            pool.mutex_available_threads.unlock();
             calc_route_singlethread(tanks, i, portion);
         }
     }
