@@ -36,7 +36,7 @@ static Sprite explosion(explosion_img, 9);
 static Sprite particle_beam_sprite(particle_beam_img, 3);
 
 const static vec2 tank_size(7, 9);
-
+ThreadPool pool;
 static uint8_t tank_radius = 3;
 static uint8_t rocket_radius = 5;
 
@@ -131,9 +131,22 @@ std::vector<T*> Tmpl8::Game::merge_sort(std::vector<T>& original, const int begi
 
 
     const int mid = (begin + end) / 2;
-    const std::vector<T*> left = merge_sort<T, Function>(original, begin, mid, predicate);
-    const std::vector<T*> right = merge_sort<T, Function>(original, mid, end, predicate);
-
+    std::vector<T*> left;
+    std::vector<T*> right;
+    pool.mutex_threadcount.lock();
+    if (pool.threads_available())
+    {
+        auto task = pool.enqueue([&original, mid, end] { return merge_sort(original, mid, end, predicate); });
+        pool.mutex_threadcount.unlock();
+        left = merge_sort(original, begin, mid);
+        right = task.get();
+    }
+    else
+    {
+        pool.mutex_threadcount.unlock();
+        left = merge_sort<T, Function>(original, begin, mid, predicate);
+        right = merge_sort<T, Function>(original, mid, end, predicate);
+    }
     return merge<T, Function>(left, right, predicate);
 }
 
@@ -389,11 +402,16 @@ void Game::update_particle_beams()
 // -----------------------------------------------------------
 void Game::update()
 {
+    // collision_tanks(tanks, 0);
+
+
     //Calculate the route to the destination for each tank using BFS
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
-        for (Tank& t : tanks)
-            t.set_route(background_terrain.a_star(t, t.target));
+    {
+        calculate_route_multithreaded(tanks);
+    }
+
 
     collision();
     update_tanks();
@@ -487,6 +505,43 @@ void Game::draw()
                                           [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
         draw_health_bars(sorted_tanks, t);
+    }
+}
+
+void Game::calculate_route_multithreaded(vector<Tank>& t)
+{
+    int portion = tanks.size() / pool.get_thread_count();
+    std::vector<std::future<void>> futures;
+    for (size_t i = 0; i < pool.get_thread_count(); i++)
+    {
+        pool.mutex_threadcount.lock();
+        if (pool.threads_available())
+        {
+            futures.push_back(pool.enqueue([&t, i, portion] { calc_route_singlethread(t, i, portion); }));
+            pool.mutex_threadcount.unlock();
+        }
+        else
+        {
+            pool.mutex_threadcount.unlock();
+            calc_route_singlethread(tanks, i, portion);
+        }
+    }
+
+    for (auto& f : futures)
+    {
+        f.wait();
+    }
+}
+
+
+//position is the portion it has to calculate
+void Tmpl8::Game::calc_route_singlethread(vector<Tank>& tanks, const int& position, const int& portion)
+{
+    Terrain terrain;
+    const int start = position * portion;
+    for (size_t i = 0; i < portion; i++)
+    {
+        tanks[start + i].set_route(terrain.a_star(tanks[start + i], tanks[start + i].target));
     }
 }
 

@@ -15,8 +15,8 @@ namespace Tmpl8
         void init();
         static void shutdown();
         void update();
-        void draw();
-        void tick();
+        static void calc_route_singlethread(vector<Tank>& t,const int& position,const int& portion);void draw();
+        void tick();void calculate_route_multithreaded(vector<Tank>& t);
         static void insertion_sort_tanks_health(const std::vector<Tank>& original,
                                                 std::vector<const Tank*>& sorted_tanks, int begin, int end);
         void draw_health_bars(const std::vector<Tank*>& sorted_tanks, const int team) const;

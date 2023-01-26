@@ -9,22 +9,49 @@ class Worker;
 
 class Worker
 {
+
   public:
     //Instantiate the worker class by passing and storing the threadpool as a reference
     Worker(ThreadPool& s) : pool(s) {}
 
     inline void operator()();
-
   private:
     ThreadPool& pool;
 };
 
 class ThreadPool
 {
+  private:
+    friend class Worker; //Gives access to the private variables of this class
+    const uint max_Threads = std::thread::hardware_concurrency();
+    atomic<int> available_threads{ std::thread::hardware_concurrency() - 1};
+    std::vector<std::thread> workers;
+    std::deque<std::function<void()>> tasks;
+
+    std::condition_variable condition; //Wakes up a thread when work is available
+
+    std::mutex queue_mutex; //Lock for our queue
+    bool stop = false;
+
   public:
+      std::mutex mutex_threadcount;
+      bool  threads_available() {
+          return (available_threads > 0);
+      }
+
+    uint get_thread_count() {
+        return max_Threads;
+    }
+
     ThreadPool(size_t numThreads) : stop(false)
     {
         for (size_t i = 0; i < numThreads; ++i)
+            workers.push_back(std::thread(Worker(*this)));
+    }
+
+    ThreadPool() : stop(false)
+    {
+        for (size_t i = 0; i < (std::thread::hardware_concurrency() - 1); ++i)
             workers.push_back(std::thread(Worker(*this)));
     }
 
@@ -40,6 +67,7 @@ class ThreadPool
     template <class T>
     auto enqueue(T task) -> std::future<decltype(task())>
     {
+        available_threads--;
         //Wrap the function in a packaged_task so we can return a future object
         auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
 
@@ -56,19 +84,10 @@ class ThreadPool
         //Wake up a thread to start this task
         condition.notify_one();
 
+
         return wrapper->get_future();
     }
 
-  private:
-    friend class Worker; //Gives access to the private variables of this class
-
-    std::vector<std::thread> workers;
-    std::deque<std::function<void()>> tasks;
-
-    std::condition_variable condition; //Wakes up a thread when work is available
-
-    std::mutex queue_mutex; //Lock for our queue
-    bool stop = false;
 };
 
 inline void Worker::operator()()
@@ -94,6 +113,7 @@ inline void Worker::operator()()
 
         task();
     }
+    pool.available_threads++;
 }
 
 } // namespace Tmpl8
