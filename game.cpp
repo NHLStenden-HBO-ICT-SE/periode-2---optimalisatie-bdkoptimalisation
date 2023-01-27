@@ -36,7 +36,6 @@ static Sprite explosion(explosion_img, 9);
 static Sprite particle_beam_sprite(particle_beam_img, 3);
 std::mutex mutex_tanks;
 std::mutex mutex_rockets;
-std::mutex mutex_smokes;
 const static vec2 tank_size(7, 9);
 ThreadPool pool;
 static uint8_t tank_radius = 3;
@@ -107,19 +106,18 @@ void Game::update_tanks_multithreaded() {
 
 void Game::update_rockets_multithreaded() {
     int portion = rockets.size() / pool.get_thread_count();
-    int remainder = tanks.size() % pool.get_thread_count();
     std::vector<std::future<void>> futures;
     for (int i = 0; i < pool.get_thread_count(); i++) {
         pool.mutex_available_threads.lock();
         if (pool.threads_available())
         {
             pool.mutex_available_threads.unlock();
-            futures.push_back(pool.enqueue([&, i, portion, remainder]() {update_rockets_partial(i, portion, remainder); }));
+            futures.push_back(pool.enqueue([&, i, portion]() {update_rockets_partial(i, portion); }));
         }
         else
         {
             pool.mutex_available_threads.unlock();
-            update_rockets_partial(i, portion, remainder);
+            update_rockets_partial(i, portion);
         }
     }
 
@@ -157,22 +155,18 @@ void Game::update_tanks_partial(int currentloop, int portion) {
 
 
 
-void Game::update_rockets_partial(int currentloop, int portion, int remainder) {
+void Game::update_rockets_partial(int currentloop, int portion) {
     int start = portion * currentloop;
-    int maximum = portion;
-    if (currentloop == pool.get_thread_count())
-    {
-        maximum += remainder;
-    }
-    for (int c = 0; c < maximum; c++) {
+    for (int c = 0; c < portion; c++) {
         Rocket &rocket = rockets[start + c];
         rocket.tick();
+
         //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
         for (Tank& tank : tanks)
         {
-            if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(tank.position, tank_radius))
+            if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(
+                tank.position, tank_radius))
             {
-                const std::lock_guard<std::mutex> guard_tank(mutex_tanks);
                 explosions.emplace_back(&explosion, tank.position);
 
                 if (tank.hit(rocket_hit_value))
