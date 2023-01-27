@@ -365,26 +365,79 @@ void Game::convex_hull()
 void Game::update_rocket()
 {
     //Update rockets
-    for (Rocket& rocket : rockets)
+
+    vector<future<void>> futures{};
+    auto portion = rockets.size() / 16;
+    auto remainder = rockets.size() % 16;
+    int start = 0, end = 0;
+
+    for (int i = 0; i < 16; i++)
     {
-        rocket.tick();
+        start = end;
+        end += portion;
+        if (remainder > 0) {
+            end++;
+            remainder--;
+        }
 
-        //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
-        for (Tank& tank : tanks)
+        pool.mutex_available_threads.lock();
+        if (pool.threads_available())
         {
-            if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(
-                tank.position, tank_radius))
+            futures.push_back(pool.enqueue([&, start, end]() {
+                for (int j = start; j < end; j++)
+                {
+                    Rocket& rocket = rockets[j];
+                    rocket.tick();
+
+                    //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
+                    for (Tank& tank : tanks)
+                    {
+                        if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(
+                            tank.position, tank_radius))
+                        {
+                            explosions.emplace_back(&explosion, tank.position);
+
+                            if (tank.hit(rocket_hit_value))
+                                smokes.emplace_back(smoke, tank.position - vec2(7, 24));
+
+
+                            rocket.active = false;
+                            break;
+                        }
+                    }
+                }
+                }));
+            pool.mutex_available_threads.unlock();
+        }
+        else
+        {
+            pool.mutex_available_threads.unlock();
+            for (int j = start; j < end; j++)
             {
-                explosions.emplace_back(&explosion, tank.position);
+                Rocket& rocket = rockets[j];
+                rocket.tick();
 
-                if (tank.hit(rocket_hit_value))
-                    smokes.emplace_back(smoke, tank.position - vec2(7, 24));
+                //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
+                for (Tank& tank : tanks)
+                {
+                    if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(
+                        tank.position, tank_radius))
+                    {
+                        explosions.emplace_back(&explosion, tank.position);
+
+                        if (tank.hit(rocket_hit_value))
+                            smokes.emplace_back(smoke, tank.position - vec2(7, 24));
 
 
-                rocket.active = false;
-                break;
+                        rocket.active = false;
+                        break;
+                    }
+                }
             }
         }
+    }
+    for (int c = 0; c < futures.size(); c++) {
+        futures.at(c).wait();
     }
 }
 
@@ -483,6 +536,10 @@ void Game::update()
 
     //update rocket
     update_rocket();
+
+    if (frame_count == 1) {
+        printf("end");
+    }
 
     //rocket hits convex
     rocket_hits_convex();
