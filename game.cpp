@@ -83,15 +83,17 @@ void Game::init()
 }
 
 
-void Game::update_tanks_multithreaded() {
+void Game::update_tanks_multithreaded()
+{
     int portion = tanks.size() / pool.get_thread_count();
     std::vector<std::future<void>> futures;
-    for (int i = 0; i < pool.get_thread_count(); i++) {
+    for (int i = 0; i < pool.get_thread_count(); i++)
+    {
         pool.mutex_available_threads.lock();
         if (pool.threads_available())
         {
             pool.mutex_available_threads.unlock();
-            futures.push_back(pool.enqueue([&, i, portion]() {update_tanks_partial(i, portion); }));
+            futures.push_back(pool.enqueue([&, i, portion]() { update_tanks_partial(i, portion); }));
         }
         else
         {
@@ -100,24 +102,27 @@ void Game::update_tanks_multithreaded() {
         }
     }
 
-    for (int c = 0; c < futures.size(); c++) {
+    for (int c = 0; c < futures.size(); c++)
+    {
         futures.at(c).wait();
     }
 }
 
-void Game::update_rockets_multithreaded() {
+void Game::update_rockets_multithreaded()
+{
     int portion = rockets.size() / pool.get_thread_count();
     int remainder = tanks.size() % pool.get_thread_count(), start = 0, end = 0;
     std::vector<std::future<void>> futures;
-    for (int i = 0; i < pool.get_thread_count(); i++) {
-        start = end;
-        end += portion;
+    for (int i = 0; i < pool.get_thread_count(); i++)
+    {
+        start = i * portion;
+        end = (i + 1) * portion;
 
         pool.mutex_available_threads.lock();
         if (pool.threads_available())
         {
+            futures.push_back(pool.enqueue([&]() { update_rockets_partial(start, end); }));
             pool.mutex_available_threads.unlock();
-            futures.push_back(pool.enqueue([&]() {update_rockets_partial(start, end); }));
         }
         else
         {
@@ -126,43 +131,17 @@ void Game::update_rockets_multithreaded() {
         }
     }
 
-    for (int c = 0; c < futures.size(); c++) {
+    for (int c = 0; c < futures.size(); c++)
+    {
         futures.at(c).wait();
     }
 }
 
-
-void Game::update_tanks_partial(int currentloop, int portion) {
-    int start = portion * currentloop;
-    for (int c = 0; c < portion; c++) {
-        Tank& tank = tanks.at(start + c);
-        if (tank.active) {
-            { // prevent access violations to the tank list, lock_guard unlocks when out of scope
-                const std::lock_guard<std::mutex> guard_tank(mutex_tanks);
-                //Move tanks according to speed and nudges (see above) also reload
-                tank.tick(background_terrain);
-            }
-            //Shoot at closest target if reloaded
-            if (tank.rocket_reloaded()) {
-                Tank& target = find_closest_enemy(tank);
-                { // prevent access violations, lock_guard unlocks when out of scope
-                    const std::lock_guard<std::mutex> guard_rockets(mutex_rockets);
-                    rockets.push_back(
-                        Rocket(tank.position, (target.get_position() - tank.position).normalized() * 3,
-                            rocket_radius,
-                            tank.allignment, ((tank.allignment == RED) ? &rocket_red : &rocket_blue)));
-                }
-                tank.reload_rocket();
-            }
-        }
-    }
-}
-
-
-
-void Game::update_rockets_partial(int start, int end) {
-    for (int c = start; c < end; c++) {
-        Rocket &rocket = rockets[start + c];
+void Game::update_rockets_partial(int start, int end)
+{
+    for (int c = start; c < end; c++)
+    {
+        Rocket& rocket = rockets[c];
         rocket.tick();
         //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
         for (Tank& tank : tanks)
@@ -182,6 +161,40 @@ void Game::update_rockets_partial(int start, int end) {
         }
     }
 }
+
+void Game::update_tanks_partial(int currentloop, int portion)
+{
+    int start = portion * currentloop;
+    for (int c = 0; c < portion; c++)
+    {
+        Tank& tank = tanks.at(start + c);
+        if (tank.active)
+        {
+            {
+                // prevent access violations to the tank list, lock_guard unlocks when out of scope
+                const std::lock_guard<std::mutex> guard_tank(mutex_tanks);
+                //Move tanks according to speed and nudges (see above) also reload
+                tank.tick(background_terrain);
+            }
+            //Shoot at closest target if reloaded
+            if (tank.rocket_reloaded())
+            {
+                Tank& target = find_closest_enemy(tank);
+                {
+                    // prevent access violations, lock_guard unlocks when out of scope
+                    const std::lock_guard<std::mutex> guard_rockets(mutex_rockets);
+                    rockets.push_back(
+                        Rocket(tank.position, (target.get_position() - tank.position).normalized() * 3,
+                               rocket_radius,
+                               tank.allignment, ((tank.allignment == RED) ? &rocket_red : &rocket_blue)));
+                }
+                tank.reload_rocket();
+            }
+        }
+    }
+}
+
+
 // -----------------------------------------------------------
 // Close down application
 // -----------------------------------------------------------
@@ -326,7 +339,6 @@ void Game::collision()
         }
     }
 }
-
 
 
 void Game::update_tanks()
@@ -607,7 +619,7 @@ void Game::draw()
         const int begin = ((t < 1) ? 0 : num_tanks_blue);
         std::vector<Tank*> sorted_tanks = merge_sort<Tank>(
             tanks, begin, begin + num_tanks, tank_merge_sort_pred);
-        
+
         sorted_tanks.erase(std::remove_if(sorted_tanks.begin(), sorted_tanks.end(),
                                           [](const Tank* tank) { return !tank->active; }), sorted_tanks.end());
 
