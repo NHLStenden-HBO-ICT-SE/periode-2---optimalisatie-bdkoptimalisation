@@ -104,6 +104,28 @@ void Game::update_tanks_multithreaded() {
     }
 }
 
+void Game::update_rockets_multithreaded() {
+    int portion = rockets.size() / pool.get_thread_count();
+    std::vector<std::future<void>> futures;
+    for (int i = 0; i < pool.get_thread_count(); i++) {
+        pool.mutex_available_threads.lock();
+        if (pool.threads_available())
+        {
+            pool.mutex_available_threads.unlock();
+            futures.push_back(pool.enqueue([&, i, portion]() {update_rockets_partial(i, portion); }));
+        }
+        else
+        {
+            pool.mutex_available_threads.unlock();
+            update_rockets_partial(i, portion);
+        }
+    }
+
+    for (int c = 0; c < futures.size(); c++) {
+        futures.at(c).wait();
+    }
+}
+
 
 void Game::update_tanks_partial(int currentloop, int portion) {
     int start = portion * currentloop;
@@ -126,6 +148,33 @@ void Game::update_tanks_partial(int currentloop, int portion) {
                             tank.allignment, ((tank.allignment == RED) ? &rocket_red : &rocket_blue)));
                 }
                 tank.reload_rocket();
+            }
+        }
+    }
+}
+
+
+
+void Game::update_rockets_partial(int currentloop, int portion) {
+    int start = portion * currentloop;
+    for (int c = 0; c < portion; c++) {
+        Rocket &rocket = rockets[start + c];
+        rocket.tick();
+
+        //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
+        for (Tank& tank : tanks)
+        {
+            if (tank.active && (tank.allignment != rocket.allignment) && rocket.intersects(
+                tank.position, tank_radius))
+            {
+                explosions.emplace_back(&explosion, tank.position);
+
+                if (tank.hit(rocket_hit_value))
+                    smokes.emplace_back(smoke, tank.position - vec2(7, 24));
+
+
+                rocket.active = false;
+                break;
             }
         }
     }
@@ -482,7 +531,7 @@ void Game::update()
     convex_hull();
 
     //update rocket
-    update_rocket();
+    update_rockets_multithreaded();
 
     //rocket hits convex
     rocket_hits_convex();

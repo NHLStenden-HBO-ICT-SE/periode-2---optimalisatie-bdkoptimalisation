@@ -14,7 +14,9 @@ namespace Tmpl8
         void set_target(Surface* surface) { screen = surface; }
         void init();
         void update_tanks_multithreaded();
-        void update_tanks_partial(int start, int end);
+        void update_rockets_multithreaded();
+        void update_tanks_partial(int currentloop, int portion);
+        void update_rockets_partial(int currentloop, int portion);
         static void shutdown();
         void update();
         static void calc_route_singlethread(vector<Tank>& t,const int& position,const int& portion);void draw();
