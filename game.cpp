@@ -160,7 +160,7 @@ void Game::update_tanks_partial(int currentloop, int portion) {
 void Game::update_rockets_partial(int currentloop, int portion, int remainder) {
     int start = portion * currentloop;
     int maximum = portion;
-    if (currentloop == pool.get_thread_count())
+    if (!(currentloop++ < pool.get_thread_count()))
     {
         maximum += remainder;
     }
