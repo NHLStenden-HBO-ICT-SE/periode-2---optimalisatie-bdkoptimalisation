@@ -107,19 +107,22 @@ void Game::update_tanks_multithreaded() {
 
 void Game::update_rockets_multithreaded() {
     int portion = rockets.size() / pool.get_thread_count();
-    int remainder = tanks.size() % pool.get_thread_count();
+    int remainder = tanks.size() % pool.get_thread_count(), start = 0, end = 0;
     std::vector<std::future<void>> futures;
     for (int i = 0; i < pool.get_thread_count(); i++) {
+        start = end;
+        end += portion;
+
         pool.mutex_available_threads.lock();
         if (pool.threads_available())
         {
             pool.mutex_available_threads.unlock();
-            futures.push_back(pool.enqueue([&, i, portion, remainder]() {update_rockets_partial(i, portion, remainder); }));
+            futures.push_back(pool.enqueue([&]() {update_rockets_partial(start, end); }));
         }
         else
         {
             pool.mutex_available_threads.unlock();
-            update_rockets_partial(i, portion, remainder);
+            update_rockets_partial(start, end);
         }
     }
 
@@ -157,14 +160,8 @@ void Game::update_tanks_partial(int currentloop, int portion) {
 
 
 
-void Game::update_rockets_partial(int currentloop, int portion, int remainder) {
-    int start = portion * currentloop;
-    int maximum = portion;
-    if (!(currentloop++ < pool.get_thread_count()))
-    {
-        maximum += remainder;
-    }
-    for (int c = 0; c < maximum; c++) {
+void Game::update_rockets_partial(int start, int end) {
+    for (int c = start; c < end; c++) {
         Rocket &rocket = rockets[start + c];
         rocket.tick();
         //Check if rocket collides with enemy tank, spawn explosion, and if tank is destroyed spawn a smoke plume
