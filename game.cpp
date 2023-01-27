@@ -34,7 +34,8 @@ static Sprite rocket_blue(rocket_blue_img, 12);
 static Sprite smoke(smoke_img, 4);
 static Sprite explosion(explosion_img, 9);
 static Sprite particle_beam_sprite(particle_beam_img, 3);
-
+std::mutex mutex_tanks;
+std::mutex mutex_rockets;
 const static vec2 tank_size(7, 9);
 ThreadPool pool;
 static uint8_t tank_radius = 3;
@@ -80,6 +81,55 @@ void Game::init()
     particle_beams.emplace_back(vec2(1200, 600), vec2(100, 50), &particle_beam_sprite, particle_beam_hit_value);
 }
 
+
+void Game::update_tanks_multithreaded() {
+    int portion = tanks.size() / pool.get_thread_count();
+    std::vector<std::future<void>> futures;
+    for (int i = 0; i < pool.get_thread_count(); i++) {
+        pool.mutex_available_threads.lock();
+        if (pool.threads_available())
+        {
+            pool.mutex_available_threads.unlock();
+            futures.push_back(pool.enqueue([&, i, portion]() {update_tanks_partial(i, portion); }));
+        }
+        else
+        {
+            pool.mutex_available_threads.unlock();
+            update_tanks_partial(i, portion);
+        }
+    }
+
+    for (int c = 0; c < futures.size(); c++) {
+        futures.at(c).wait();
+    }
+}
+
+
+void Game::update_tanks_partial(int currentloop, int portion) {
+    int start = portion * currentloop;
+    for (int c = 0; c < portion; c++) {
+        Tank& tank = tanks.at(start + c);
+        if (tank.active) {
+            { // prevent access violations to the tank list, lock_guard unlocks when out of scope
+                const std::lock_guard<std::mutex> guard_tank(mutex_tanks);
+                //Move tanks according to speed and nudges (see above) also reload
+                tank.tick(background_terrain);
+            }
+            //Shoot at closest target if reloaded
+            if (tank.rocket_reloaded()) {
+                Tank& target = find_closest_enemy(tank);
+                { // prevent access violations, lock_guard unlocks when out of scope
+                    const std::lock_guard<std::mutex> guard_rockets(mutex_rockets);
+                    rockets.push_back(
+                        Rocket(tank.position, (target.get_position() - tank.position).normalized() * 3,
+                            rocket_radius,
+                            tank.allignment, ((tank.allignment == RED) ? &rocket_red : &rocket_blue)));
+                }
+                tank.reload_rocket();
+            }
+        }
+    }
+}
 // -----------------------------------------------------------
 // Close down application
 // -----------------------------------------------------------
@@ -224,6 +274,8 @@ void Game::collision()
         }
     }
 }
+
+
 
 void Game::update_tanks()
 {
@@ -407,7 +459,7 @@ void Game::update()
     // collision_tanks(tanks, 0);
 
 
-    //Calculate the route to the destination for each tank using BFS
+    //Calculate the route to the destination for each tank using A*
     //Initializing routes here so it gets counted for performance..
     if (frame_count == 0)
     {
@@ -416,7 +468,7 @@ void Game::update()
 
 
     collision();
-    update_tanks();
+    update_tanks_multithreaded();
 
     //Update smoke plumes
     for (Smoke& smoke : smokes)
